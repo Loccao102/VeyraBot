@@ -202,72 +202,103 @@ function RitualPanel({
         </button>
       </div>
 
-      <form className="thought-form" onSubmit={submitThought}>
-        <label htmlFor="sen-thought">Leave something with Sen</label>
-        <textarea
-          id="sen-thought"
-          maxLength={160}
-          rows={3}
-          value={thought}
-          disabled={disabled}
-          onChange={(event) => setThought(event.target.value)}
-          placeholder="A thought, a feeling, or something you want to leave here…"
-        />
-        <div>
-          <span>{ritual.thoughtCount}/24 resting in the pond</span>
-          <button type="submit" disabled={disabled || !thought.trim()}>
-            Place in the pond ↘
-          </button>
-        </div>
-      </form>
-
-      <div className="ritual-divider" />
-
-      <div className="focus-ritual">
-        <div>
-          <span>Stay with Sen</span>
-          <small>Let the rest of the page fall away for a while.</small>
-        </div>
-        <div className="focus-options">
-          {[1, 25, 45].map((minutes) => (
-            <button
-              key={minutes}
-              type="button"
+      <div className="ritual-stack">
+        <section className="ritual-item ritual-thought">
+          <div className="ritual-item-title">
+            <span>01</span>
+            <div>
+              <strong>Leave a thought</strong>
+              <small>It becomes a petal in your pond.</small>
+            </div>
+          </div>
+          <form className="thought-form" onSubmit={submitThought}>
+            <textarea
+              id="sen-thought"
+              aria-label="Leave a thought with Sen"
+              maxLength={160}
+              rows={3}
+              value={thought}
               disabled={disabled}
-              onClick={() => onStartFocus(minutes)}
-            >
-              {minutes === 1 ? "1m preview" : `${minutes}m`}
-            </button>
-          ))}
-        </div>
+              onChange={(event) => setThought(event.target.value)}
+              placeholder="Write something you want to leave here…"
+            />
+            <div>
+              <span>{ritual.thoughtCount}/24 in the pond</span>
+              <button type="submit" disabled={disabled || !thought.trim()}>
+                Place it ↘
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="ritual-item focus-ritual">
+          <div className="ritual-item-title">
+            <span>02</span>
+            <div>
+              <strong>Stay with Sen</strong>
+              <small>A quiet focus session. Nothing else.</small>
+            </div>
+          </div>
+          <div className="focus-options">
+            {[1, 25, 45].map((minutes) => (
+              <button
+                key={minutes}
+                type="button"
+                disabled={disabled}
+                onClick={() => onStartFocus(minutes)}
+              >
+                {minutes === 1 ? "1m preview" : `${minutes}m`}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="ritual-item ritual-capture">
+          <div className="ritual-item-title">
+            <span>03</span>
+            <div>
+              <strong>Keep the moment</strong>
+              <small>Save the garden as a shareable image.</small>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="capture-moment-button"
+            onClick={onCapture}
+            disabled={disabled || captureStatus === "working"}
+          >
+            <span>Capture</span>
+            <b>
+              {captureStatus === "working"
+                ? "Preparing…"
+                : captureStatus === "done"
+                  ? "Saved ✧"
+                  : captureStatus === "error"
+                    ? "Try again"
+                    : "PNG ↗"}
+            </b>
+          </button>
+        </section>
       </div>
-
-      <div className="ritual-divider" />
-
-      <button
-        type="button"
-        className="capture-moment-button"
-        onClick={onCapture}
-        disabled={disabled || captureStatus === "working"}
-      >
-        <span>Capture this moment</span>
-        <b>
-          {captureStatus === "working"
-            ? "Preparing…"
-            : captureStatus === "done"
-              ? "Moment saved ✧"
-              : captureStatus === "error"
-                ? "Try again"
-                : "PNG ↗"}
-        </b>
-      </button>
     </div>
   );
 }
 
 function FocusHUD({ focus, onTogglePause, onExit }) {
+  const progress =
+    focus.durationMs > 0
+      ? Math.max(
+          0,
+          Math.min(1, 1 - focus.remainingMs / focus.durationMs),
+        )
+      : 0;
+
   return (
-    <div className="focus-hud" aria-live="polite">
+    <div
+      className="focus-hud"
+      aria-live="polite"
+      style={{ "--focus-progress": `${progress * 100}%` }}
+    >
       <div className="focus-hud-brand">
         <LotusMark />
         <span>Stay with Sen</span>
@@ -284,6 +315,9 @@ function FocusHUD({ focus, onTogglePause, onExit }) {
           Exit
         </button>
       </div>
+      <span className="focus-progress" aria-hidden="true">
+        <i />
+      </span>
     </div>
   );
 }
@@ -536,17 +570,13 @@ function App() {
           <div className="garden-ring" />
           <div className="scene-topline">
             <span>THE LOTUS GARDEN</span>
-            <span>✧</span>
-          </div>
-          <div className="garden-statusbar" aria-live="polite">
-            <span className="garden-status-presence">
-              <i aria-hidden="true">{PRESENCE_ICONS[presence.phase.key]}</i>
-              <b>{presence.phase.label}</b>
-              <em>{PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}</em>
+            <span className="scene-presence">
+              {PRESENCE_ICONS[presence.phase.key]} {presence.phase.label}
+              <i>·</i>
+              {PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}
             </span>
-            <span className="garden-status-divider" />
-            <span className="garden-status-play">
-              P2 <b>{interaction.discoveryCount}/{interaction.discoveryTotal}</b>
+            <span className="scene-discoveries">
+              DISCOVERED {interaction.discoveryCount}/{interaction.discoveryTotal}
             </span>
           </div>
           <div
@@ -895,7 +925,7 @@ function App() {
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>P2 · PLAY COMPLETE · v1.0</span>
+        <span>P2 · PLAY · FINAL PASS · v1.1</span>
       </footer>
     </main>
   );
