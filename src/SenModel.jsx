@@ -94,7 +94,7 @@ const MOOD_MOTION = {
     lean: 0,
     blinkMin: 3.8,
     blinkMax: 6.2,
-    blinkDuration: 0.11,
+    blinkDuration: 0.156,
     hoverAmp: 0.05,
     hoverSpeed: 0.82,
     hoverSecondaryAmp: 0.018,
@@ -116,7 +116,7 @@ const MOOD_MOTION = {
     lean: -0.035,
     blinkMin: 4.2,
     blinkMax: 7.0,
-    blinkDuration: 0.14,
+    blinkDuration: 0.19,
     hoverAmp: 0.04,
     hoverSpeed: 0.68,
     hoverSecondaryAmp: 0.014,
@@ -160,7 +160,7 @@ const MOOD_MOTION = {
     lean: 0.018,
     blinkMin: 3.5,
     blinkMax: 5.2,
-    blinkDuration: 0.09,
+    blinkDuration: 0.13,
     hoverAmp: 0.032,
     hoverSpeed: 0.95,
     hoverSecondaryAmp: 0.01,
@@ -182,7 +182,7 @@ const MOOD_MOTION = {
     lean: -0.018,
     blinkMin: 2.8,
     blinkMax: 4.8,
-    blinkDuration: 0.09,
+    blinkDuration: 0.12,
     hoverAmp: 0.065,
     hoverSpeed: 1.05,
     hoverSecondaryAmp: 0.02,
@@ -204,7 +204,7 @@ const MOOD_MOTION = {
     lean: 0.07,
     blinkMin: 6.8,
     blinkMax: 10,
-    blinkDuration: 0.22,
+    blinkDuration: 0.28,
     hoverAmp: 0.026,
     hoverSpeed: 0.34,
     hoverSecondaryAmp: 0.01,
@@ -441,19 +441,19 @@ function CrownPetal({ side, index, state, motion, bloom, palette }) {
 }
 
 function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
-  const ref = useRef();
   const gazeRefs = useRef({});
-  const blinkAmount = useRef(0);
-  const nextBlinkAt = useRef(0);
-  const blinkUntil = useRef(0);
-  const doubleBlinkAt = useRef(-1);
+  const eyeShapeRefs = useRef({});
+  const lidRefs = useRef({});
+  const blinkAmount = useRef(state === "sleep" ? 0.94 : 0);
+  const blinkMode = useRef("open");
+  const blinkTimer = useRef(randomBetween(1.2, 2.0));
+  const doubleBlinkPending = useRef(false);
 
   useEffect(() => {
-    const config = MOOD_MOTION[state] || MOOD_MOTION.idle;
-    nextBlinkAt.current = randomBetween(config.blinkMin, config.blinkMax);
-    blinkUntil.current = 0;
-    doubleBlinkAt.current = -1;
-    blinkAmount.current = state === "sleep" ? 0.88 : 0;
+    blinkAmount.current = state === "sleep" ? 0.94 : 0;
+    blinkMode.current = "open";
+    blinkTimer.current = state === "sleep" ? 999 : randomBetween(1.15, 1.95);
+    doubleBlinkPending.current = false;
   }, [state]);
 
   useFrame(({ clock }, delta) => {
@@ -466,55 +466,78 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     let targetBlink = 0;
 
     if (state === "sleep") {
-      targetBlink = 0.9 + Math.sin(t * 0.42) * 0.045;
+      // Sleep keeps the eyelids almost shut, but a tiny slow variation prevents
+      // the face from looking frozen.
+      targetBlink = 0.94 + Math.sin(t * 0.42) * 0.025;
+    } else if (state === "success") {
+      targetBlink = 0;
     } else if (motion) {
-      if (nextBlinkAt.current <= 0) {
-        nextBlinkAt.current =
-          t + randomBetween(config.blinkMin, config.blinkMax);
-      }
+      blinkTimer.current -= delta;
 
-      if (blinkUntil.current > t) {
-        targetBlink = 1;
-      } else if (doubleBlinkAt.current > 0 && t >= doubleBlinkAt.current) {
-        blinkUntil.current = t + config.blinkDuration * 0.82;
-        doubleBlinkAt.current = -1;
-        targetBlink = 1;
-      } else if (t >= nextBlinkAt.current) {
-        blinkUntil.current = t + config.blinkDuration;
-
-        if (Math.random() < 0.2) {
-          doubleBlinkAt.current =
-            blinkUntil.current + randomBetween(0.09, 0.16);
+      if (blinkTimer.current <= 0) {
+        if (blinkMode.current === "open") {
+          blinkMode.current = "closed";
+          blinkTimer.current = config.blinkDuration;
+          doubleBlinkPending.current = Math.random() < 0.24;
         } else {
-          doubleBlinkAt.current = -1;
-        }
+          blinkMode.current = "open";
 
-        nextBlinkAt.current =
-          blinkUntil.current +
-          randomBetween(config.blinkMin, config.blinkMax);
-        targetBlink = 1;
+          if (doubleBlinkPending.current) {
+            blinkTimer.current = randomBetween(0.1, 0.17);
+            doubleBlinkPending.current = false;
+          } else {
+            blinkTimer.current = randomBetween(
+              config.blinkMin,
+              config.blinkMax,
+            );
+          }
+        }
       }
+
+      targetBlink = blinkMode.current === "closed" ? 1 : 0;
     }
 
     blinkAmount.current = damp(
       blinkAmount.current,
       targetBlink,
-      targetBlink > blinkAmount.current ? 28 : 18,
+      targetBlink > blinkAmount.current ? 34 : 20,
       delta,
     );
 
     const moodEyeScale =
-      state === "thinking" ? 0.86 : state === "listening" ? 1.08 : 1;
-    const blinkScale = THREE.MathUtils.lerp(1, 0.09, blinkAmount.current);
+      state === "thinking" ? 0.88 : state === "listening" ? 1.08 : 1;
     const restAmount =
       state === "sleep" ? 1 : Math.max(0.08, wakeAmount);
+    const eyeScaleY =
+      THREE.MathUtils.lerp(moodEyeScale, 0.035, blinkAmount.current) *
+      restAmount;
+    const lidOpacity =
+      state === "sleep"
+        ? 0.92
+        : THREE.MathUtils.smoothstep(blinkAmount.current, 0.45, 0.9);
 
-    ref.current.scale.y = damp(
-      ref.current.scale.y,
-      moodEyeScale * blinkScale * restAmount,
-      state === "sleep" ? 8 : 22,
-      delta,
-    );
+    [-1, 1].forEach((side) => {
+      const eyeShape = eyeShapeRefs.current[side];
+      if (eyeShape) {
+        eyeShape.scale.y = damp(
+          eyeShape.scale.y,
+          eyeScaleY,
+          state === "sleep" ? 10 : 28,
+          delta,
+        );
+      }
+
+      const lid = lidRefs.current[side];
+      if (lid?.material) {
+        lid.material.opacity = damp(
+          lid.material.opacity,
+          lidOpacity,
+          state === "sleep" ? 10 : 30,
+          delta,
+        );
+        lid.visible = lid.material.opacity > 0.02;
+      }
+    });
 
     const stateGaze =
       state === "sleep" || state === "success"
@@ -549,24 +572,28 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
 
   return (
     <group position={[0, 0.84, 0.585]}>
-      <group ref={ref}>
-        {[-1, 1].map((side) => (
-          <group
-            key={side}
-            position={[side * 0.205, 0, 0]}
-            rotation={[0, 0, state === "thinking" ? side * 0.12 : -side * 0.06]}
-          >
-            {state === "success" ? (
-              <Line
-                points={Array.from({ length: 25 }, (_, i) => {
-                  const t = (i / 24) * Math.PI;
-                  return [Math.cos(t) * 0.088, Math.sin(t) * 0.06, 0.025];
-                })}
-                color="#77505a"
-                lineWidth={4}
-              />
-            ) : (
-              <>
+      {[-1, 1].map((side) => (
+        <group
+          key={side}
+          position={[side * 0.205, 0, 0]}
+          rotation={[0, 0, state === "thinking" ? side * 0.12 : -side * 0.06]}
+        >
+          {state === "success" ? (
+            <Line
+              points={Array.from({ length: 25 }, (_, i) => {
+                const t = (i / 24) * Math.PI;
+                return [Math.cos(t) * 0.088, Math.sin(t) * 0.06, 0.025];
+              })}
+              color="#77505a"
+              lineWidth={4}
+            />
+          ) : (
+            <>
+              <group
+                ref={(node) => {
+                  eyeShapeRefs.current[side] = node;
+                }}
+              >
                 <mesh scale={[0.094, 0.139, 0.035]}>
                   <sphereGeometry args={[1, 24, 16]} />
                   <meshBasicMaterial color="#77505a" />
@@ -599,25 +626,42 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
                     <meshBasicMaterial color="#ffe5ca" />
                   </mesh>
                 </group>
-              </>
-            )}
+              </group>
 
-            <Line
-              points={[
-                [
-                  -0.075,
-                  0.21 + (state === "thinking" && side < 0 ? 0.035 : 0),
-                  -0.035,
-                ],
-                [0, 0.23, -0.025],
-                [0.075, 0.21, -0.035],
-              ]}
-              color="#bb8890"
-              lineWidth={2}
-            />
-          </group>
-        ))}
-      </group>
+              <Line
+                ref={(node) => {
+                  lidRefs.current[side] = node;
+                }}
+                points={[
+                  [-0.088, 0.005, 0.05],
+                  [-0.044, -0.034, 0.055],
+                  [0, -0.048, 0.058],
+                  [0.044, -0.034, 0.055],
+                  [0.088, 0.005, 0.05],
+                ]}
+                color="#77505a"
+                lineWidth={4.2}
+                transparent
+                opacity={0}
+              />
+            </>
+          )}
+
+          <Line
+            points={[
+              [
+                -0.075,
+                0.21 + (state === "thinking" && side < 0 ? 0.035 : 0),
+                -0.035,
+              ],
+              [0, 0.23, -0.025],
+              [0.075, 0.21, -0.035],
+            ]}
+            color="#bb8890"
+            lineWidth={2}
+          />
+        </group>
+      ))}
 
       {[-1, 1].map((side) => (
         <mesh
