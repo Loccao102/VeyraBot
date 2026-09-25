@@ -51,7 +51,46 @@ a {
   max-width: 1800px;
   margin: auto;
   padding: 0 46px;
-  background: radial-gradient(ellipse at 49% 36%, #faeeec70, transparent 48%);
+  --presence-glow: #faeeec70;
+  --presence-wash: transparent;
+  --presence-moon-a: #fff9f5;
+  --presence-moon-b: #f0dcd96b;
+  --presence-moon-c: #efddd533;
+  background:
+    radial-gradient(ellipse at 49% 36%, var(--presence-glow), transparent 48%),
+    linear-gradient(180deg, var(--presence-wash), transparent 58%);
+  transition:
+    background 1.4s ease,
+    color 1.4s ease;
+}
+
+.app-shell.time-dawn {
+  --presence-glow: #f7d9cf75;
+  --presence-wash: #fff1e230;
+  --presence-moon-a: #fff6ec;
+  --presence-moon-b: #efcfc56f;
+  --presence-moon-c: #e9cfc03d;
+}
+
+.app-shell.time-day {
+  --presence-glow: #faeeec70;
+  --presence-wash: #fffdf71f;
+}
+
+.app-shell.time-dusk {
+  --presence-glow: #eab9b879;
+  --presence-wash: #cf9f8330;
+  --presence-moon-a: #ffe9df;
+  --presence-moon-b: #dda7a475;
+  --presence-moon-c: #d2a17c3d;
+}
+
+.app-shell.time-night {
+  --presence-glow: #b9afbf55;
+  --presence-wash: #75677518;
+  --presence-moon-a: #f3e9e9;
+  --presence-moon-b: #c5b5c069;
+  --presence-moon-c: #95879633;
 }
 .topbar {
   height: 91px;
@@ -233,10 +272,13 @@ em {
   border-radius: 50%;
   background: radial-gradient(
     circle at 47% 40%,
-    #fff9f5,
-    #f0dcd96b 67%,
-    #efddd533
+    var(--presence-moon-a),
+    var(--presence-moon-b) 67%,
+    var(--presence-moon-c)
   );
+  transition:
+    background 1.4s ease,
+    box-shadow 1.4s ease;
   z-index: -1;
 }
 .garden-ring {
@@ -284,6 +326,40 @@ em {
   letter-spacing: 1.7px;
   color: #a2907d;
   pointer-events: none;
+}
+
+.presence-label {
+  color: #9b7d75;
+  transition: color 1s ease;
+}
+
+.time-dawn .presence-label {
+  color: #ad7c6b;
+}
+
+.time-dusk .presence-label {
+  color: #9a6265;
+}
+
+.time-night .presence-label {
+  color: #756a7d;
+}
+
+.time-night .garden-ring {
+  border-color: #b9a8b34d;
+}
+
+.time-night .garden-ring:before,
+.time-night .garden-ring:after {
+  color: #b9a5b5;
+}
+
+.time-night .garden-moon {
+  box-shadow: 0 0 70px #d7c7cf2e;
+}
+
+.time-dusk .garden-moon {
+  box-shadow: 0 0 62px #d89f8940;
 }
 .scene-caption {
   position: absolute;
