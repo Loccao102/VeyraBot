@@ -452,6 +452,64 @@ em {
   background: #f5efebd8;
 }
 
+.interaction-hint {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 58px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 36px);
+  padding: 7px 11px;
+  border: 1px solid #dccbc0a3;
+  border-radius: 999px;
+  background: #fffaf2c7;
+  box-shadow: 0 10px 28px #7152430d;
+  backdrop-filter: blur(8px);
+  color: #8a7469;
+  pointer-events: none;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.interaction-hint > span {
+  flex-shrink: 0;
+  font-size: 6px;
+  letter-spacing: 1.2px;
+  color: #a46879;
+}
+
+.interaction-hint > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 0.55px;
+}
+
+.interaction-hint.active {
+  transform: translateX(-50%) translateY(-3px);
+  border-color: #caaab4bf;
+  background: #f9e9e9d6;
+  color: #805d67;
+}
+
+.time-night .interaction-hint {
+  background: #756a77c7;
+  border-color: #b4a4b29e;
+  color: #f3e9ef;
+}
+
+.time-night .interaction-hint > span {
+  color: #edcbd8;
+}
+
 .time-dawn .presence-label {
   color: #ad7c6b;
 }
@@ -1085,6 +1143,17 @@ em {
   }
   .presence-status-chip strong {
     font-size: 6px;
+  }
+  .interaction-hint {
+    bottom: 46px;
+    gap: 6px;
+    padding: 6px 9px;
+  }
+  .interaction-hint > strong {
+    font-size: 6px;
+  }
+  .interaction-hint > span {
+    font-size: 5px;
   }
   .canvas-wrap {
     inset: 0 -19px 30px;
