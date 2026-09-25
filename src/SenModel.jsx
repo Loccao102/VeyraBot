@@ -953,6 +953,7 @@ export default function SenModel({
   coreControl = 1,
   hoverControl = 1,
   reducedMotion = false,
+  presencePhase = "day",
 }) {
   const root = useRef(),
     awake = useRef(),
@@ -964,6 +965,25 @@ export default function SenModel({
   const motion = reducedMotion ? 0 : 1;
   useFrame(({ clock, pointer }, delta) => {
     const t = clock.elapsedTime;
+    const presenceCalm =
+      presencePhase === "night"
+        ? 0.48
+        : presencePhase === "dawn"
+          ? 0.68
+          : presencePhase === "dusk"
+            ? 0.8
+            : 1;
+    const autonomous = state === "idle" ? motion : 0;
+    const idleLook =
+      (Math.sin(t * 0.17) * 0.075 +
+        Math.sin(t * 0.071 + 1.8) * 0.045) *
+      autonomous *
+      presenceCalm;
+    const idleTilt =
+      Math.sin(t * 0.11 + 0.6) * 0.026 * autonomous * presenceCalm;
+    const idleBreath =
+      1 + Math.sin(t * 0.82) * 0.0045 * autonomous * presenceCalm;
+
     bloom.current = damp(
       bloom.current,
       state === "sleep" ? 0 : energy / 100,
@@ -971,43 +991,60 @@ export default function SenModel({
       delta,
     );
     root.current.position.y =
-      Math.sin(t * 1.3) * cfg.bob * hoverControl * motion;
+      Math.sin(t * (1.05 + presenceCalm * 0.25)) *
+      cfg.bob *
+      hoverControl *
+      motion *
+      (0.72 + presenceCalm * 0.28);
     const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.2, 0.72);
     const folded = 1 - emergence;
     awake.current.scale.set(
-      0.93 + 0.07 * emergence,
-      0.975 + 0.025 * emergence,
-      0.93 + 0.07 * emergence,
+      (0.93 + 0.07 * emergence) * idleBreath,
+      (0.975 + 0.025 * emergence) * idleBreath,
+      (0.93 + 0.07 * emergence) * idleBreath,
     );
-    awake.current.position.y = -0.43 * folded;
+    awake.current.position.y =
+      -0.43 * folded +
+      Math.sin(t * 0.31 + 1.2) * 0.012 * autonomous * presenceCalm;
     awake.current.rotation.x = damp(
       awake.current.rotation.x,
       0.075 * folded,
       3,
       delta,
     );
+    awake.current.rotation.y = damp(
+      awake.current.rotation.y,
+      idleLook * 0.36,
+      1.7,
+      delta,
+    );
     head.current.position.y = damp(
       head.current.position.y,
-      -0.13 * folded,
-      3,
+      -0.13 * folded +
+        Math.sin(t * 0.27) * 0.014 * autonomous * presenceCalm,
+      2,
       delta,
     );
     head.current.rotation.z = damp(
       head.current.rotation.z,
-      cfg.tilt + Math.sin(t * 0.65) * 0.016 * motion,
-      3,
+      cfg.tilt +
+        Math.sin(t * 0.65) * 0.016 * motion +
+        idleTilt,
+      2.2,
       delta,
     );
     head.current.rotation.y = damp(
       head.current.rotation.y,
-      pointer.x * 0.12 * motion,
-      3,
+      pointer.x * 0.12 * motion + idleLook,
+      2.4,
       delta,
     );
     head.current.rotation.x = damp(
       head.current.rotation.x,
-      0.14 * folded - pointer.y * 0.045 * motion * emergence,
-      3,
+      0.14 * folded -
+        pointer.y * 0.045 * motion * emergence +
+        Math.sin(t * 0.13 + 2.2) * 0.018 * autonomous * presenceCalm,
+      2.4,
       delta,
     );
     const wakeFlash =
