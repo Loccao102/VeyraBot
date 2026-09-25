@@ -19,6 +19,7 @@ export default function useInteractionManager() {
   const clearTimer = useRef(null);
   const cooldowns = useRef(new Map());
   const rippleTimers = useRef(new Set());
+  const heldTargetRef = useRef(null);
 
   const [reaction, setReaction] = useState({
     id: 0,
@@ -141,6 +142,7 @@ export default function useInteractionManager() {
   );
 
   const beginCoreHold = useCallback(() => {
+    heldTargetRef.current = "core";
     setHeldTarget("core");
     trigger("core_hold", {
       target: "core",
@@ -152,8 +154,10 @@ export default function useInteractionManager() {
   }, [trigger]);
 
   const endCoreHold = useCallback(() => {
-    setHeldTarget((current) => (current === "core" ? null : current));
-    trigger("core_release", {
+    if (heldTargetRef.current !== "core") return false;
+    heldTargetRef.current = null;
+    setHeldTarget(null);
+    return trigger("core_release", {
       target: "core",
       intensity: 1,
       duration: 1050,
