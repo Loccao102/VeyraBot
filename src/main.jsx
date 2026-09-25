@@ -17,12 +17,12 @@ import { captureSenMoment } from "./captureMoment";
 import "./styles.css";
 
 const STATES = [
-  ["idle", "Idle", "A quiet moment, together."],
-  ["thinking", "Thinking", "A little space for a thoughtful answer."],
-  ["listening", "Listening", "You have my attention."],
-  ["working", "Working", "One gentle step at a time."],
-  ["success", "Success", "Small steps. Beautiful progress."],
-  ["sleep", "Rest", "Folded into stillness. Ready when you are."],
+  ["idle", "Idle", "A quiet moment, together.", "◌"],
+  ["thinking", "Thinking", "A little space for a thoughtful answer.", "◇"],
+  ["listening", "Listening", "You have my attention.", "∿"],
+  ["working", "Working", "One gentle step at a time.", "⌁"],
+  ["success", "Success", "Small steps. Beautiful progress.", "✦"],
+  ["sleep", "Rest", "Folded into stillness. Ready when you are.", "☾"],
 ];
 const QUICK_COMMANDS = [
   "Continue my project",
@@ -643,29 +643,24 @@ function App() {
 
       <div className="workspace">
         <aside className="intro-panel">
-          <div className="eyebrow">ROOTED IN VIETNAM · MADE TO BE WITH YOU</div>
+          <div className="intro-kicker">
+            <LotusMark />
+            <span>LOTUS COMPANION</span>
+          </div>
           <h1>
-            A quiet mind.
+            A little
             <br />
-            <em>A little Sen.</em>
+            <em>Sen.</em>
           </h1>
-          <p className="intro-text">
-            Inspired by the lotus.
-            <br />
-            Here to listen, think, and grow with you.
-          </p>
           <span className="vietnamese-note" lang="vi">
             Dịu dàng bên bạn.
           </span>
-          <div className="ornament">
-            <span />✧<span />
-          </div>
           <div className="states-heading">
-            <h2>Moments of Sen</h2>
-            <span>01 — 06</span>
+            <h2>Moments</h2>
+            <span>{state.toUpperCase()}</span>
           </div>
           <nav className="state-panel" aria-label="Character states">
-            {STATES.map(([value, label], index) => (
+            {STATES.map(([value, label, , glyph], index) => (
               <button
                 key={value}
                 className={`state-btn ${state === value ? "active" : ""}`}
@@ -673,11 +668,9 @@ function App() {
                 disabled={isRunning}
                 onClick={() => setState(value)}
               >
+                <span className="state-glyph">{glyph}</span>
+                <span className="state-label">{label}</span>
                 <span className="state-number">0{index + 1}</span>
-                <span>{label}</span>
-                <span className="state-glyph">
-                  {value === "sleep" ? "☾" : "✧"}
-                </span>
               </button>
             ))}
           </nav>
@@ -850,39 +843,33 @@ function App() {
         </section>
 
         <aside className="detail-panel">
-          <div className="detail-seal">
-            <LotusMark />
+          <div className="detail-head">
+            <div>
+              <small>YOUR SEN</small>
+              <strong>{personal.gardenStyleLabel}</strong>
+            </div>
+            <div className="mini-palette" aria-label="Your Sen palette">
+              {[
+                personal.dna.petalPrimary,
+                personal.dna.petalSoft,
+                personal.dna.leaf,
+                personal.dna.gold,
+              ].map((color) => (
+                <i key={color} style={{ background: color }} />
+              ))}
+            </div>
           </div>
-          <div className="eyebrow">MEET YOUR COMPANION</div>
-          <h2>
-            Soft by nature.
-            <br />
-            <em>Bright within.</em>
-          </h2>
-          <p>
-            Petal by petal, a familiar presence. Pearl ceramic, lotus pink, and
-            a little warmth from within.
-          </p>
-          <div
-            className="palette"
-            aria-label="Lotus pink, pearl ivory, leaf green and champagne palette"
-          >
-            {["#e5a2b6", "#f6e4d7", "#708771", "#b18a5c"].map((color) => (
-              <span key={color} style={{ background: color }} />
-            ))}
-            <small>THE SEN PALETTE</small>
-          </div>
+
           <section className="control-panel" aria-label="Character controls">
-            <div className="eyebrow">A MOMENT, YOUR WAY</div>
             {[
-              ["Petal drift", halo, setHalo, "Aura + particles"],
-              ["Inner warmth", core, setCore, "Core + inner light"],
-              ["Gentle float", hover, setHover, "Float + body sway"],
+              ["Drift", halo, setHalo, "Aura"],
+              ["Warmth", core, setCore, "Core"],
+              ["Float", hover, setHover, "Motion"],
             ].map(([label, value, setter, hint]) => (
               <label key={label}>
                 <span>
                   <span>
-                    {label}
+                    <strong>{label}</strong>
                     <small>{hint}</small>
                   </span>
                   <b>{value.toFixed(1)}</b>
@@ -899,18 +886,19 @@ function App() {
               </label>
             ))}
           </section>
-          <div className="rest-note">
-            <span>☾</span>
-            <p>
-              Even a lotus needs to rest.
-              <br />
-              Try{" "}
-              <button onClick={() => setState("sleep")} disabled={isRunning}>
-                Rest mode
-              </button>{" "}
-              and watch Sen curl into a bud.
-            </p>
-          </div>
+
+          <button
+            type="button"
+            className={`rest-toggle ${state === "sleep" ? "active" : ""}`}
+            onClick={() => setState(state === "sleep" ? "idle" : "sleep")}
+            disabled={isRunning}
+          >
+            <span>{state === "sleep" ? "☀" : "☾"}</span>
+            <span>
+              <strong>{state === "sleep" ? "Wake Sen" : "Rest mode"}</strong>
+              <small>{state === "sleep" ? "Open the lotus again" : "Fold into a quiet bud"}</small>
+            </span>
+          </button>
         </aside>
       </div>
 
