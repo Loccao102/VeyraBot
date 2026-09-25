@@ -484,6 +484,40 @@ em {
   color: #a46879;
 }
 
+.interaction-hint > span b {
+  margin-left: 6px;
+  padding-left: 6px;
+  border-left: 1px solid #cfb7bd;
+  font: inherit;
+  color: #8d756f;
+  letter-spacing: 0.7px;
+}
+
+.interaction-hint.discovery-found {
+  border-color: #c69aaa;
+  background: #f5dfe5e8;
+  box-shadow:
+    0 10px 28px #71524316,
+    0 0 28px #d9a5b72a;
+}
+
+.interaction-hint.discovery-found > strong {
+  color: #87566a;
+}
+
+.time-night .interaction-hint.discovery-found {
+  background: #705e72e8;
+  border-color: #d0b0c3;
+  box-shadow:
+    0 10px 28px #32253724,
+    0 0 30px #d0b0c333;
+}
+
+.time-night .interaction-hint > span b {
+  border-left-color: #b9a8b6;
+  color: #e9dbe4;
+}
+
 .interaction-hint > strong {
   overflow: hidden;
   text-overflow: ellipsis;

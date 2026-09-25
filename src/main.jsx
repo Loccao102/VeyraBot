@@ -254,7 +254,6 @@ function App() {
   const [presenceLabOpen, setPresenceLabOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const presence = usePresence();
-  const interaction = useInteractionManager();
   const {
     state,
     setState,
@@ -267,6 +266,12 @@ function App() {
     cancel,
     startVoiceInput,
   } = useVeyraAgent();
+  const interaction = useInteractionManager({
+    phase: presence.phase.key,
+    weather: presence.weather.key,
+    state,
+    enabled: !isRunning,
+  });
   const current = STATES.find((item) => item[0] === state);
   useEffect(() => {
     if (!blooming || state === "sleep" || energy >= 100) return;
@@ -375,19 +380,28 @@ function App() {
           <div
             className={`interaction-hint ${
               interaction.reaction.type !== "none" ? "active" : ""
+            } ${
+              interaction.reaction.discoveryId ? "discovery-found" : ""
             }`}
             aria-live="polite"
           >
-            <span>P2 · PLAY</span>
+            <span>
+              P2 · PLAY
+              <b>
+                {interaction.discoveryCount}/{interaction.discoveryTotal}
+              </b>
+            </span>
             <strong>
-              {interaction.reaction.label ||
-                (interaction.hoveredTarget === "core"
-                  ? "Hold Sen’s inner light."
-                  : interaction.hoveredTarget?.startsWith("petal:")
-                    ? "This petal is listening."
-                    : interaction.hoveredTarget === "head"
-                      ? "Sen is looking back."
-                      : "Touch Sen · petals · core · water")}
+              {interaction.reaction.discoveryId
+                ? `✧ ${interaction.reaction.label}`
+                : interaction.reaction.label ||
+                  (interaction.hoveredTarget === "core"
+                    ? "Hold Sen’s inner light."
+                    : interaction.hoveredTarget?.startsWith("petal:")
+                      ? "This petal is listening."
+                      : interaction.hoveredTarget === "head"
+                        ? "Sen is looking back."
+                        : "Touch. Stay. Notice what Sen remembers.")}
             </strong>
           </div>
           <div className="canvas-wrap">
@@ -653,7 +667,7 @@ function App() {
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>P2.1 · PLAY · v0.8</span>
+        <span>P2.2 · DISCOVER · v0.9</span>
       </footer>
     </main>
   );

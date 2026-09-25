@@ -655,11 +655,18 @@ function TouchRipple({ ripple, reducedMotion }) {
       1,
     );
     const ease = THREE.MathUtils.smoothstep(age, 0, 1);
-    const pulse = reducedMotion ? 0.55 : 0.55 + ease * 3.9;
+    const chorus = ripple.variant?.includes("chorus");
+    const pulse = reducedMotion
+      ? 0.55
+      : 0.55 + ease * (chorus ? 5.1 : 3.9);
     ref.current.scale.setScalar(pulse);
     ref.current.material.opacity =
-      Math.sin(Math.PI * age) * (reducedMotion ? 0.14 : 0.3);
+      Math.sin(Math.PI * age) *
+      (reducedMotion ? 0.14 : chorus ? 0.4 : 0.3);
   });
+
+  const rain = ripple.variant?.includes("rain");
+  const chorus = ripple.variant?.includes("chorus");
 
   return (
     <mesh
@@ -667,9 +674,9 @@ function TouchRipple({ ripple, reducedMotion }) {
       position={[ripple.position[0], -1.105, ripple.position[2]]}
       rotation={[-Math.PI / 2, 0, 0]}
     >
-      <ringGeometry args={[0.055, 0.068, 56]} />
+      <ringGeometry args={chorus ? [0.05, 0.068, 64] : [0.055, 0.068, 56]} />
       <meshBasicMaterial
-        color="#7f9987"
+        color={rain ? "#a9a2ad" : chorus ? "#c38ca0" : "#7f9987"}
         transparent
         opacity={0}
         depthWrite={false}
@@ -988,6 +995,111 @@ function SleepEffect({ motion }) {
   );
 }
 
+function DiscoveryEffect({ reaction, reducedMotion }) {
+  const ref = useRef();
+  const type = reaction?.type ?? "none";
+  const active = type.startsWith("secret_");
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    ref.current.visible = active;
+    if (!active) return;
+
+    const current =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    const age = THREE.MathUtils.clamp(
+      (current - reaction.startedAt) / Math.max(1, reaction.duration),
+      0,
+      1,
+    );
+    const envelope = Math.sin(Math.PI * age);
+    const motionScale = reducedMotion ? 0.22 : 1;
+
+    ref.current.children.forEach((mesh, i) => {
+      const angle = i * 2.399;
+      const seed = (i % 5) / 5;
+      const flutter = Math.sin(clock.elapsedTime * 2.4 + i) * 0.045 * motionScale;
+
+      if (type === "secret_shy") {
+        const side = i % 2 ? 1 : -1;
+        mesh.position.set(
+          side * (0.34 + seed * 0.42),
+          0.62 + seed * 0.72 + age * 0.22,
+          0.18 + Math.cos(angle) * 0.16,
+        );
+      } else if (type === "secret_petal_dance") {
+        const side = i % 2 ? 1 : -1;
+        mesh.position.set(
+          side * (0.55 + seed * 0.55),
+          -0.24 + Math.sin(angle + age * 5) * 0.24 + age * 0.48,
+          0.08 + Math.cos(angle) * 0.26,
+        );
+      } else if (type === "secret_night_fireflies") {
+        const radius = 0.4 + seed * 0.7;
+        mesh.position.set(
+          Math.sin(angle + clock.elapsedTime * 0.65 * motionScale) * radius,
+          -0.05 + seed * 1.25 + flutter,
+          Math.cos(angle + clock.elapsedTime * 0.65 * motionScale) * 0.44,
+        );
+      } else if (type === "secret_pond_chorus") {
+        const radius = 0.52 + seed * 0.75 + age * 0.16;
+        mesh.position.set(
+          Math.sin(angle) * radius,
+          -0.92 + age * 0.52 + flutter,
+          Math.cos(angle) * radius * 0.42,
+        );
+      } else if (type === "secret_quiet_gaze") {
+        const radius = 0.18 + seed * 0.34;
+        mesh.position.set(
+          Math.sin(angle) * radius,
+          0.58 + seed * 0.72 + age * 0.12,
+          0.42 + Math.cos(angle) * 0.09,
+        );
+      }
+
+      const sparkle =
+        0.72 + (Math.sin(clock.elapsedTime * 4 + i * 0.9) + 1) * 0.14;
+      mesh.scale.setScalar(
+        (0.72 + seed * 0.38) * sparkle * (0.72 + envelope * 0.4),
+      );
+      mesh.material.opacity = envelope * (0.34 + seed * 0.34);
+    });
+  });
+
+  return (
+    <group ref={ref} visible={false}>
+      {Array.from({ length: 14 }, (_, i) => (
+        <mesh key={i} rotation={[0, 0, i * 0.7]}>
+          {i % 3 === 0 ? (
+            <octahedronGeometry args={[0.026 + (i % 4) * 0.006, 0]} />
+          ) : (
+            <sphereGeometry args={[0.018 + (i % 3) * 0.005, 8, 6]} />
+          )}
+          <meshBasicMaterial
+            color={
+              type === "secret_night_fireflies"
+                ? i % 2
+                  ? "#d5c57e"
+                  : "#8fac83"
+                : type === "secret_pond_chorus"
+                  ? i % 2
+                    ? "#9bb2a0"
+                    : "#d5a2b2"
+                  : i % 3 === 0
+                    ? "#d6ae73"
+                    : "#efa9bd"
+            }
+            transparent
+            opacity={0}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function StateEffects({ state, motion }) {
   if (state === "thinking") return <ThinkingEffect motion={motion} />;
   if (state === "listening") return <ListeningEffect motion={motion} />;
@@ -1076,6 +1188,13 @@ export default function SenModel({
           : Math.sin(Math.PI * reactionAge) * (reaction.intensity ?? 1);
     const headHover = hoveredTarget === "head" ? 1 : 0;
     const headPat = reaction.type === "head_pat" ? reactionEnvelope : 0;
+    const shy = reaction.type === "secret_shy" ? reactionEnvelope : 0;
+    const petalDance =
+      reaction.type === "secret_petal_dance" ? reactionEnvelope : 0;
+    const nightFireflies =
+      reaction.type === "secret_night_fireflies" ? reactionEnvelope : 0;
+    const quietGaze =
+      reaction.type === "secret_quiet_gaze" ? reactionEnvelope : 0;
     const phaseCalm =
       presencePhase === "night"
         ? 0.48
@@ -1153,7 +1272,9 @@ export default function SenModel({
       head.current.position.y,
       -0.13 * folded +
         Math.sin(t * 0.27) * 0.014 * autonomous * presenceCalm -
-        headPat * 0.045,
+        headPat * 0.045 -
+        shy * 0.045 +
+        quietGaze * 0.02,
       headHover ? 4.2 : 2,
       delta,
     );
@@ -1162,13 +1283,20 @@ export default function SenModel({
       cfg.tilt +
         Math.sin(t * 0.65) * 0.016 * motion +
         idleTilt +
-        Math.sin(reactionAge * Math.PI * 3) * headPat * 0.065,
+        Math.sin(reactionAge * Math.PI * 3) * headPat * 0.065 +
+        shy * 0.13 +
+        quietGaze * 0.045,
       headHover ? 4.5 : 2.2,
       delta,
     );
     head.current.rotation.y = damp(
       head.current.rotation.y,
-      pointer.x * (headHover ? 0.21 : 0.12) * motion + idleLook,
+      pointer.x *
+        (headHover ? 0.21 : 0.12) *
+        motion *
+        (1 - quietGaze * 0.92) +
+        idleLook * (1 - quietGaze) +
+        shy * 0.18,
       headHover ? 5 : 2.4,
       delta,
     );
@@ -1177,7 +1305,9 @@ export default function SenModel({
       0.14 * folded -
         pointer.y * (headHover ? 0.072 : 0.045) * motion * emergence +
         Math.sin(t * 0.13 + 2.2) * 0.018 * autonomous * presenceCalm +
-        headPat * 0.075,
+        headPat * 0.075 +
+        shy * 0.055 -
+        quietGaze * 0.028,
       headHover ? 5 : 2.4,
       delta,
     );
@@ -1192,7 +1322,11 @@ export default function SenModel({
           ? reactionEnvelope
           : 0;
       const flutter =
-        Math.sin(reactionAge * Math.PI * 4) * petalTouch * 0.105 * side;
+        Math.sin(reactionAge * Math.PI * 4) * petalTouch * 0.105 * side +
+        Math.sin(reactionAge * Math.PI * 8 + side * 0.8) *
+          petalDance *
+          0.14 *
+          side;
 
       petalGroup.rotation.z = damp(
         petalGroup.rotation.z,
@@ -1202,7 +1336,7 @@ export default function SenModel({
       );
       petalGroup.position.y = damp(
         petalGroup.position.y,
-        petalHover * 0.014 + petalTouch * 0.025,
+        petalHover * 0.014 + petalTouch * 0.025 + petalDance * 0.04,
         8,
         delta,
       );
@@ -1224,7 +1358,8 @@ export default function SenModel({
     const coreInteractionGlow =
       (coreHovered ? 0.28 : 0) +
       (coreHeld ? 1.1 + Math.sin(t * 5.2) * 0.16 : 0) +
-      coreRelease * 0.45;
+      coreRelease * 0.45 +
+      nightFireflies * 0.78;
 
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
@@ -1462,6 +1597,7 @@ export default function SenModel({
 
       </group>
       <StateEffects state={state} motion={motion} />
+      <DiscoveryEffect reaction={reaction} reducedMotion={reducedMotion} />
       {LOTUS_LAYERS.flatMap((layer, layerIndex) =>
         Array.from({ length: layer.count }, (_, index) => (
           <LotusBloomPetal
