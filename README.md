@@ -2,26 +2,42 @@
 
 **Veyra** is a personal AI companion designed as a living 3D presence instead of a conventional chatbot window.
 
-## Live playground
-
-Temporary public preview:
+## Public preview
 
 https://raw.githack.com/Loccao102/VeyraBot/gh-pages/index.html
 
 The `gh-pages` branch is rebuilt automatically from `main`.
 
-## Current milestone — Character Playground v0.3
+## Current milestone — Veyra v0.4
 
-- Procedural React Three Fiber character with no external model dependency
-- Signature visor, ear fins, dual halo, energy core and levitation system
-- Runtime states: Idle, Thinking, Listening, Working, Success and Sleep
+Veyra is now more than a character viewer. The playground demonstrates the first end-to-end agent experience:
+
+`command → listening → thinking → working → success → idle`
+
+### Character system
+
+- Procedural React Three Fiber character
 - Pointer-aware gaze and head tracking
-- State-driven arm gestures and body language
+- State-based arm poses and body language
 - Listening energy waves
 - Working holographic focus panels
-- Success particles and low-energy sleep behavior
-- Live controls for halo speed, core energy and hover amplitude
-- Galaxy playground UI
+- Success particles
+- Sleep / low-energy state
+- New asymmetric **signature crest**
+- New chest energy glyph and orbiting satellite
+- Live halo, core and hover controls
+
+### Agent interaction
+
+- Command dock
+- Quick actions
+- Automatic state lifecycle
+- Cancelable runs
+- Small conversation history
+- Browser speech recognition when available
+- Mock context-aware responses for project/repo/design commands
+
+The lifecycle is intentionally separated from real tool execution so the next milestone can replace the mock worker with Veyra Core without redesigning the UI or character states.
 
 ## Run locally
 
@@ -36,17 +52,25 @@ npm run dev
 npm run build
 ```
 
-## Direction
+## Roadmap
 
-Veyra will evolve into a desktop AI companion that can understand project context, remember work, delegate to coding/browser/research agents and operate local tools with explicit permissions.
+### Character
 
-### Character roadmap
+1. v0.2 — full-form procedural model
+2. v0.3 — gaze, gestures and reactive behavior
+3. **v0.4 — signature silhouette + agent-aware behavior**
+4. v0.5 — authored rig, conversational micro-gestures and optimized GLB
 
-1. v0.2 — procedural full-form character and state language
-2. v0.3 — gaze, hand/arm gestures, reactive behavior and richer face language
-3. v0.4 — voice-reactive animation, authored rig and conversational micro-gestures
-4. v0.5 — optimized production GLB with baked animation clips
+### Agent
 
-### Agent roadmap
+1. command lifecycle prototype
+2. project context detection
+3. persistent memory
+4. local filesystem + Git + shell tools
+5. Codex / coding-worker integration
+6. browser worker
+7. desktop shell / always-on-top companion
+
+Target architecture:
 
 `Desktop Shell → Veyra Core → Memory → Planner → Tools → Sub-agents → Project Galaxy`
