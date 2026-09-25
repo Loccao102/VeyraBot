@@ -180,7 +180,7 @@ function App() {
     if (!blooming || state === "sleep" || energy >= 100) return;
     const timer = setTimeout(
       () => setEnergy((value) => Math.min(100, value + 1)),
-      240,
+      140,
     );
     return () => clearTimeout(timer);
   }, [blooming, energy, state]);
