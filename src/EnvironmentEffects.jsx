@@ -76,11 +76,17 @@ export function getPresencePhase(date = new Date()) {
   return PRESENCE_PHASES.night;
 }
 
-function AmbientMotes({ phase, reducedMotion }) {
+function AmbientMotes({ phase, weather, reducedMotion }) {
   const ref = useRef();
   const motes = useMemo(
     () =>
-      Array.from({ length: phase.moteCount }, (_, i) => {
+      Array.from(
+        {
+          length:
+            phase.moteCount +
+            (weather.key === "mist" ? 10 : weather.key === "wind" ? 6 : 0),
+        },
+        (_, i) => {
         const seed = (i * 37 + 11) % 97;
         const angle = ((seed / 97) * TAU + i * 0.71) % TAU;
         const radius = 0.9 + ((i * 13) % 19) / 15;
@@ -93,8 +99,9 @@ function AmbientMotes({ phase, reducedMotion }) {
           speed: 0.28 + (i % 5) * 0.045,
           gold: i % 5 === 0,
         };
-      }),
-    [phase],
+      },
+      ),
+    [phase, weather],
   );
 
   useFrame(({ clock }) => {
@@ -102,15 +109,27 @@ function AmbientMotes({ phase, reducedMotion }) {
     ref.current?.children.forEach((mesh, i) => {
       const mote = motes[i];
       const movement = reducedMotion ? 0.12 : 1;
+      const windPush = weather.key === "wind" ? 0.28 : 0.085;
       mesh.position.x =
-        mote.x + Math.sin(time * mote.speed + mote.phase) * 0.085 * movement;
+        mote.x +
+        Math.sin(time * mote.speed + mote.phase) * windPush * movement +
+        (weather.key === "wind" ? Math.sin(time * 0.52 + mote.phase) * 0.12 : 0);
       mesh.position.y =
         mote.y +
         Math.sin(time * (mote.speed + 0.17) + mote.phase) * 0.11 * movement;
       const twinkle =
         0.34 + (Math.sin(time * 1.15 + mote.phase) + 1) * 0.18;
+      const weatherOpacity =
+        weather.key === "rain"
+          ? 0.52
+          : weather.key === "mist"
+            ? 0.68
+            : weather.key === "cloudy"
+              ? 0.72
+              : 1;
       mesh.material.opacity =
-        phase.key === "night" ? twinkle * 0.42 : twinkle * 0.26;
+        (phase.key === "night" ? twinkle * 0.42 : twinkle * 0.26) *
+        weatherOpacity;
       const scale =
         0.82 + Math.sin(time * 0.9 + mote.phase) * 0.14 * movement;
       mesh.scale.setScalar(scale);
@@ -134,7 +153,7 @@ function AmbientMotes({ phase, reducedMotion }) {
   );
 }
 
-function MoonHalo({ phase, reducedMotion }) {
+function MoonHalo({ phase, weather, reducedMotion }) {
   const ref = useRef();
   useFrame(({ clock }) => {
     if (!ref.current) return;
@@ -142,8 +161,11 @@ function MoonHalo({ phase, reducedMotion }) {
       ? 1
       : 1 + Math.sin(clock.elapsedTime * 0.42) * 0.035;
     ref.current.scale.setScalar(pulse);
+    const weatherFade =
+      weather.key === "rain" ? 0.35 : weather.key === "cloudy" ? 0.55 : 1;
     ref.current.material.opacity =
-      phase.key === "night" ? 0.14 : phase.key === "dusk" ? 0.07 : 0.035;
+      (phase.key === "night" ? 0.14 : phase.key === "dusk" ? 0.07 : 0.035) *
+      weatherFade;
   });
 
   return (
@@ -165,12 +187,150 @@ function MoonHalo({ phase, reducedMotion }) {
   );
 }
 
+function RainField({ reducedMotion }) {
+  const geometryRef = useRef();
+  const drops = useMemo(
+    () =>
+      Array.from({ length: 72 }, (_, i) => ({
+        x: -2.4 + ((i * 37) % 100) / 20,
+        z: -1.15 + ((i * 53) % 100) / 48,
+        seed: ((i * 29) % 100) / 100,
+        speed: 0.65 + (i % 7) * 0.055,
+        length: 0.08 + (i % 4) * 0.025,
+      })),
+    [],
+  );
+  const positions = useMemo(() => new Float32Array(drops.length * 6), [drops]);
+
+  useFrame(({ clock }) => {
+    if (!geometryRef.current) return;
+    const t = clock.elapsedTime * (reducedMotion ? 0.18 : 1);
+    drops.forEach((drop, i) => {
+      const travel = (t * drop.speed + drop.seed * 3.4) % 3.4;
+      const y = 2.05 - travel;
+      const base = i * 6;
+      positions[base] = drop.x;
+      positions[base + 1] = y;
+      positions[base + 2] = drop.z;
+      positions[base + 3] = drop.x - 0.025;
+      positions[base + 4] = y - drop.length;
+      positions[base + 5] = drop.z;
+    });
+    geometryRef.current.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <lineSegments renderOrder={2}>
+      <bufferGeometry ref={geometryRef}>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <lineBasicMaterial
+        color="#bcaeb3"
+        transparent
+        opacity={0.24}
+        depthWrite={false}
+      />
+    </lineSegments>
+  );
+}
+
+function MistField({ reducedMotion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    ref.current?.children.forEach((mesh, i) => {
+      const drift = reducedMotion ? 0.04 : 1;
+      mesh.position.x =
+        Math.sin(clock.elapsedTime * (0.07 + i * 0.012) + i) * 0.34 * drift;
+      mesh.material.opacity =
+        0.028 + (Math.sin(clock.elapsedTime * 0.19 + i * 1.7) + 1) * 0.009;
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {[0, 1, 2].map((i) => (
+        <mesh
+          key={i}
+          position={[0, -0.08 + i * 0.5, -0.65 - i * 0.22]}
+          scale={[2.8 - i * 0.25, 0.72 + i * 0.12, 1]}
+        >
+          <circleGeometry args={[1, 48]} />
+          <meshBasicMaterial
+            color={i === 0 ? "#eadfdd" : "#efe6e2"}
+            transparent
+            opacity={0.035}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function WindField({ reducedMotion }) {
+  const geometryRef = useRef();
+  const streaks = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => ({
+        y: -0.65 + (i % 6) * 0.42,
+        z: -0.9 + (i % 4) * 0.3,
+        seed: ((i * 31) % 100) / 100,
+        length: 0.12 + (i % 4) * 0.04,
+      })),
+    [],
+  );
+  const positions = useMemo(() => new Float32Array(streaks.length * 6), [streaks]);
+
+  useFrame(({ clock }) => {
+    if (!geometryRef.current) return;
+    const t = clock.elapsedTime * (reducedMotion ? 0.12 : 0.75);
+    streaks.forEach((streak, i) => {
+      const x = -2.2 + ((t + streak.seed * 4.4) % 4.4);
+      const base = i * 6;
+      positions[base] = x;
+      positions[base + 1] = streak.y;
+      positions[base + 2] = streak.z;
+      positions[base + 3] = x + streak.length;
+      positions[base + 4] = streak.y + 0.012;
+      positions[base + 5] = streak.z;
+    });
+    geometryRef.current.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <lineSegments>
+      <bufferGeometry ref={geometryRef}>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <lineBasicMaterial
+        color="#b9aa9f"
+        transparent
+        opacity={0.12}
+        depthWrite={false}
+      />
+    </lineSegments>
+  );
+}
+
 export default function EnvironmentEffects({
   phase,
+  weather,
   reducedMotion = false,
   sleeping = false,
 }) {
-  const lightMultiplier = sleeping ? 0.72 : 1;
+  const weatherKey = weather?.key ?? "clear";
+  const weatherLight =
+    weatherKey === "rain"
+      ? 0.72
+      : weatherKey === "mist"
+        ? 0.8
+        : weatherKey === "cloudy"
+          ? 0.84
+          : weatherKey === "wind"
+            ? 0.93
+            : 1;
+  const lightMultiplier = (sleeping ? 0.72 : 1) * weatherLight;
 
   return (
     <>
@@ -194,8 +354,18 @@ export default function EnvironmentEffects({
         color={phase.backLight}
       />
 
-      <AmbientMotes phase={phase} reducedMotion={reducedMotion} />
-      <MoonHalo phase={phase} reducedMotion={reducedMotion} />
+      <AmbientMotes
+        phase={phase}
+        weather={weather}
+        reducedMotion={reducedMotion}
+      />
+      <MoonHalo phase={phase} weather={weather} reducedMotion={reducedMotion} />
+      {weatherKey === "rain" && <RainField reducedMotion={reducedMotion} />}
+      {weatherKey === "mist" && <MistField reducedMotion={reducedMotion} />}
+      {weatherKey === "wind" && <WindField reducedMotion={reducedMotion} />}
+      {weatherKey === "mist" && (
+        <fog attach="fog" args={["#eadfdd", 4.8, 8.4]} />
+      )}
 
       <Environment resolution={64}>
         <Lightformer
