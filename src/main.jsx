@@ -5,17 +5,17 @@ import { ContactShadows, Environment, OrbitControls, Stars } from '@react-three/
 import VeyraModel from './VeyraModel'
 import './styles.css'
 
-const STATES = ['idle','thinking','listening','working','success']
+const STATES = ['idle','thinking','listening','working','success','sleep']
 
 function Scene({ state, halo, core, hover }) {
   return <>
     <color attach="background" args={['#02050d']} />
     <fog attach="fog" args={['#030611',8,18]} />
-    <ambientLight intensity={.72} />
-    <directionalLight position={[4,6,5]} intensity={3.4} color="#dfe7ff" />
-    <pointLight position={[-4,2,2]} intensity={30} distance={10} color="#8b5cff" />
-    <pointLight position={[4,1,2]} intensity={26} distance={10} color="#00e5ff" />
-    <Stars radius={50} depth={20} count={1900} factor={2.2} saturation={.3} fade speed={.22} />
+    <ambientLight intensity={state === 'sleep' ? .42 : .72} />
+    <directionalLight position={[4,6,5]} intensity={state === 'sleep' ? 2.0 : 3.4} color="#dfe7ff" />
+    <pointLight position={[-4,2,2]} intensity={state === 'sleep' ? 15 : 30} distance={10} color="#8b5cff" />
+    <pointLight position={[4,1,2]} intensity={state === 'sleep' ? 12 : 26} distance={10} color="#00e5ff" />
+    <Stars radius={50} depth={20} count={1900} factor={2.2} saturation={.3} fade speed={state === 'sleep' ? .08 : .22} />
     <Suspense fallback={null}>
       <VeyraModel state={state} haloControl={halo} coreControl={core} hoverControl={hover} />
       <Environment preset="city" />
@@ -36,7 +36,7 @@ function App(){
       <div className="brand">
         <div className="brand-mark">✦</div>
         <strong>VEYRA</strong>
-        <span>PLAYGROUND · MODEL v0.2</span>
+        <span>PLAYGROUND · MODEL v0.3</span>
       </div>
       <div className="window-actions">
         <button>⌁</button><button>—</button><button>□</button><button>×</button>
@@ -81,8 +81,8 @@ function App(){
           <input type="range" min="0" max="2" step=".01" value={hover} onChange={e=>setHover(+e.target.value)}/>
         </label>
         <div className="control-note">
-          Veyra v0.2 is procedural: each state controls face, halo, ear fins, core,
-          orbit rings and body language independently.
+          v0.3 adds pointer gaze, state-based arm gestures, listening waves,
+          focused work holograms and a low-energy sleep behavior.
         </div>
       </aside>
 
@@ -94,11 +94,11 @@ function App(){
 
       <footer className="bottombar glass">
         <div><span className="online-dot"/>Veyra Online</div>
-        <div>Character v0.2</div>
-        <div className="live-pill">PROCEDURAL MODEL</div>
+        <div>Character v0.3</div>
+        <div className="live-pill">BEHAVIOR MODEL</div>
         <div className="spacer"/>
+        <div>Move pointer · Veyra follows</div>
         <div>Drag to orbit</div>
-        <div>Scroll to zoom</div>
       </footer>
     </section>
   </main>
