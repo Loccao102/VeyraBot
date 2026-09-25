@@ -700,6 +700,110 @@ function TouchRipples({ ripples = [], reducedMotion }) {
   );
 }
 
+function ThoughtPetal({
+  thought,
+  index,
+  selected,
+  onSelect,
+  reducedMotion,
+  enabled,
+}) {
+  const ref = useRef();
+  const placement = useMemo(() => {
+    const seed = Number.isFinite(thought.seed) ? thought.seed : 0.5;
+    const angle = (seed * TAU + index * 1.83) % TAU;
+    const radius = 1.28 + ((seed * 997 + index * 0.17) % 1) * 0.46;
+    return {
+      x: Math.sin(angle) * radius,
+      z: Math.cos(angle) * radius * 0.55,
+      rotation: -angle + Math.PI / 2,
+      phase: seed * TAU + index,
+      tint: index % 3 === 0 ? "#f8c7d2" : index % 3 === 1 ? "#f0a9bd" : "#ffe1dd",
+    };
+  }, [index, thought.seed]);
+
+  useFrame(({ clock }, delta) => {
+    if (!ref.current) return;
+    const motion = reducedMotion ? 0.12 : 1;
+    const bob = Math.sin(clock.elapsedTime * 0.42 + placement.phase) * 0.018 * motion;
+    const targetScale = selected ? 1.18 : 1;
+    ref.current.position.y = damp(
+      ref.current.position.y,
+      -1.055 + bob + (selected ? 0.018 : 0),
+      5,
+      delta,
+    );
+    ref.current.scale.x = damp(ref.current.scale.x, targetScale, 6, delta);
+    ref.current.scale.y = damp(ref.current.scale.y, targetScale, 6, delta);
+    ref.current.scale.z = damp(ref.current.scale.z, targetScale, 6, delta);
+    ref.current.rotation.y =
+      placement.rotation +
+      Math.sin(clock.elapsedTime * 0.2 + placement.phase) * 0.045 * motion;
+  });
+
+  return (
+    <group
+      ref={ref}
+      position={[placement.x, -1.055, placement.z]}
+      rotation={[0, placement.rotation, 0]}
+      onPointerOver={(event) => {
+        if (!enabled) return;
+        event.stopPropagation();
+        if (typeof document !== "undefined") document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={(event) => {
+        if (!enabled) return;
+        event.stopPropagation();
+        if (typeof document !== "undefined") document.body.style.cursor = "";
+      }}
+      onClick={(event) => {
+        if (!enabled) return;
+        event.stopPropagation();
+        onSelect?.(thought.id);
+      }}
+    >
+      <Petal
+        rotation={[1.34, 0, 0]}
+        scale={[0.18, 0.28, 0.12]}
+        color={placement.tint}
+      />
+      <mesh position={[0, 0.11, 0]} scale={[0.18, 0.12, 0.18]}>
+        <sphereGeometry args={[1, 10, 8]} />
+        <meshBasicMaterial
+          color={selected ? "#d9aa75" : "#f0c4cc"}
+          transparent
+          opacity={selected ? 0.12 : 0.035}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function ThoughtGarden({
+  thoughts = [],
+  selectedThoughtId,
+  onSelect,
+  reducedMotion,
+  enabled,
+}) {
+  return (
+    <group>
+      {thoughts.slice(-24).map((thought, index) => (
+        <ThoughtPetal
+          key={thought.id}
+          thought={thought}
+          index={index}
+          selected={thought.id === selectedThoughtId}
+          onSelect={onSelect}
+          reducedMotion={reducedMotion}
+          enabled={enabled}
+        />
+      ))}
+    </group>
+  );
+}
+
 function FloatingPetals({ state, speed, motion, bloom }) {
   const ref = useRef();
   const phase = useRef(0);
@@ -998,7 +1102,8 @@ function SleepEffect({ motion }) {
 function DiscoveryEffect({ reaction, reducedMotion }) {
   const ref = useRef();
   const type = reaction?.type ?? "none";
-  const active = type.startsWith("secret_");
+  const active =
+    type.startsWith("secret_") || type.startsWith("ritual_");
 
   useFrame(({ clock }) => {
     if (!ref.current) return;
@@ -1055,6 +1160,20 @@ function DiscoveryEffect({ reaction, reducedMotion }) {
           0.58 + seed * 0.72 + age * 0.12,
           0.42 + Math.cos(angle) * 0.09,
         );
+      } else if (type === "ritual_thought") {
+        const radius = 0.45 + seed * 0.78 + age * 0.18;
+        mesh.position.set(
+          Math.sin(angle + age * 1.2) * radius,
+          -0.84 + seed * 0.42 + age * 0.52 + flutter,
+          Math.cos(angle) * radius * 0.46,
+        );
+      } else if (type === "ritual_focus_complete") {
+        const radius = 0.32 + seed * 0.88 + age * 0.26;
+        mesh.position.set(
+          Math.sin(angle + age * 1.5) * radius,
+          -0.82 + age * 2.7 + seed * 0.52 + flutter,
+          Math.cos(angle + age * 0.8) * 0.38,
+        );
       }
 
       const sparkle =
@@ -1085,9 +1204,17 @@ function DiscoveryEffect({ reaction, reducedMotion }) {
                   ? i % 2
                     ? "#9bb2a0"
                     : "#d5a2b2"
-                  : i % 3 === 0
-                    ? "#d6ae73"
-                    : "#efa9bd"
+                  : type === "ritual_focus_complete"
+                    ? i % 3 === 0
+                      ? "#e2bf75"
+                      : "#f1a3bc"
+                    : type === "ritual_thought"
+                      ? i % 2
+                        ? "#efb4c3"
+                        : "#cda972"
+                      : i % 3 === 0
+                        ? "#d6ae73"
+                        : "#efa9bd"
             }
             transparent
             opacity={0}
@@ -1121,6 +1248,7 @@ export default function SenModel({
   presenceMood = "bright",
   interaction = null,
   interactionEnabled = true,
+  ritual = null,
 }) {
   const root = useRef(),
     awake = useRef(),
@@ -1630,6 +1758,13 @@ export default function SenModel({
       <TouchRipples
         ripples={interaction?.ripples ?? []}
         reducedMotion={reducedMotion}
+      />
+      <ThoughtGarden
+        thoughts={ritual?.thoughts ?? []}
+        selectedThoughtId={ritual?.selectedThoughtId ?? null}
+        onSelect={ritual?.selectThought}
+        reducedMotion={reducedMotion}
+        enabled={interactionEnabled}
       />
       {interactionEnabled && (
         <mesh
