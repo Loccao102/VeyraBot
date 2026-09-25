@@ -18,6 +18,69 @@ export const SEN_STATES = {
   sleep: { bloom: -0.3, tilt: 0, glow: 0.08, bob: 0.008 },
 };
 
+const LOTUS_LAYERS = [
+  {
+    key: "outer",
+    count: 8,
+    start: 0,
+    end: 0.58,
+    radius: 0.6,
+    closedHeight: 2.18,
+    openRadius: 0.36,
+    length: 1.06,
+    width: 0.56,
+    lift: 0.3,
+    tipDrop: 0.18,
+    curl: 0.22,
+    color: "#f5bdcb",
+  },
+  {
+    key: "middle",
+    count: 6,
+    start: 0.16,
+    end: 0.76,
+    radius: 0.47,
+    closedHeight: 2.23,
+    openRadius: 0.28,
+    length: 0.88,
+    width: 0.49,
+    lift: 0.38,
+    tipDrop: 0.12,
+    curl: 0.17,
+    color: "#eea7bc",
+  },
+  {
+    key: "inner",
+    count: 6,
+    start: 0.34,
+    end: 0.9,
+    radius: 0.35,
+    closedHeight: 2.28,
+    openRadius: 0.2,
+    length: 0.69,
+    width: 0.42,
+    lift: 0.47,
+    tipDrop: 0.08,
+    curl: 0.12,
+    color: "#ffe0df",
+  },
+  {
+    key: "core",
+    count: 4,
+    start: 0.52,
+    end: 1,
+    radius: 0.25,
+    closedHeight: 2.32,
+    openRadius: 0.14,
+    length: 0.52,
+    width: 0.34,
+    lift: 0.54,
+    tipDrop: 0.04,
+    curl: 0.08,
+    color: "#f7c2cf",
+  },
+];
+
 // A curved, rounded petal surface. Shared by the crown, body, leaves and satellites.
 function petalPoint(t, u, bend = 0.25) {
   const width = Math.pow(Math.sin(Math.PI * t), 0.82) * 0.49;
@@ -177,14 +240,20 @@ function CrownPetal({ side, index, state, motion, bloom }) {
   );
 }
 
-function Eyes({ state, motion }) {
+function Eyes({ state, motion, bloom }) {
   const ref = useRef();
   useFrame(({ clock, pointer }, delta) => {
     const blink =
       motion && Math.sin(clock.elapsedTime * 0.85) > 0.998 ? 0.13 : 1;
+    const wakeAmount = bloom
+      ? THREE.MathUtils.smoothstep(bloom.current, 0.46, 0.68)
+      : 1;
+    const restAmount = state === "sleep" ? 0.08 : Math.max(0.08, wakeAmount);
     ref.current.scale.y = damp(
       ref.current.scale.y,
-      (state === "thinking" ? 0.85 : state === "listening" ? 1.1 : 1) * blink,
+      (state === "thinking" ? 0.85 : state === "listening" ? 1.1 : 1) *
+        blink *
+        restAmount,
       18,
       delta,
     );
@@ -272,85 +341,228 @@ function Eyes({ state, motion }) {
   );
 }
 
-function BudPetal({ index, bloom }) {
-  const ref = useRef(),
-    edgeRef = useRef(),
-    last = useRef(-1);
-  const angle = (index / 8) * TAU;
-  const point = (t, u, open = false) => {
-    const r = open
-      ? 0.12 + 1.02 * t + 0.25 * Math.sin(Math.PI * t)
-      : Math.pow(Math.sin(Math.PI * t), 0.86) * 0.84;
-    const a =
-      angle + u * 0.46 * (open ? Math.pow(Math.sin(Math.PI * t), 0.7) : 1);
-    const y = open
-      ? 0.24 * t + 0.32 * Math.sin(Math.PI * t) * (1 - 0.25 * u * u)
-      : 2.15 * t;
-    return new THREE.Vector3(Math.sin(a) * r, y, Math.cos(a) * r);
-  };
-  const geometry = useMemo(() => {
-    const closed = surfaceGeometry((t, u) => point(t, u));
-    const opened = surfaceGeometry((t, u) => point(t, u, true));
-    closed.morphAttributes.position = [opened.attributes.position];
-    closed.morphAttributes.normal = [opened.attributes.normal];
-    opened.dispose();
-    return closed;
-  }, [index]);
-  const edges = useMemo(
-    () =>
-      [false, true].map((open) => [
-        ...Array.from({ length: 33 }, (_, i) => point(i / 32, -1, open)),
-        ...Array.from({ length: 33 }, (_, i) => point(1 - i / 32, 1, open)),
-      ]),
-    [index],
+function lotusLayerPoint(t, u, openness, cfg, twistSign) {
+  const bell = Math.pow(Math.sin(Math.PI * t), 0.78);
+  const tipBias = 0.28 + 0.72 * t * t;
+  const localOpen = THREE.MathUtils.clamp(openness * tipBias, 0, 1);
+  const width =
+    bell * cfg.width * (1 + 0.12 * openness) * (1 - 0.08 * t);
+  const closedRadius = cfg.radius * (1 - 0.92 * t) + 0.015;
+  const openRadius =
+    cfg.openRadius +
+    cfg.length * t +
+    cfg.curl * Math.sin(Math.PI * t) * (1 - 0.28 * u * u);
+  const radial = THREE.MathUtils.lerp(
+    closedRadius,
+    openRadius,
+    THREE.MathUtils.smoothstep(localOpen, 0, 1),
+  );
+  const closedY = cfg.closedHeight * t;
+  const openY =
+    0.12 +
+    cfg.lift * Math.sin(Math.PI * t) * (1 - 0.18 * u * u) -
+    cfg.tipDrop * Math.pow(t, 2.5);
+  const y = THREE.MathUtils.lerp(closedY, openY, localOpen);
+  const twist =
+    twistSign *
+    cfg.width *
+    0.15 *
+    openness *
+    Math.pow(t, 1.8) *
+    (0.35 + 0.65 * (1 - u * u));
+
+  return new THREE.Vector3(u * width + twist, y, radial);
+}
+
+const LOTUS_MORPH_STAGES = [0, 0.28, 0.66, 1];
+const lotusResourceCache = new Map();
+
+function getLotusPetalResources(layer, twistSign) {
+  const key = `${layer.key}:${twistSign}`;
+  if (lotusResourceCache.has(key)) return lotusResourceCache.get(key);
+
+  const geometries = LOTUS_MORPH_STAGES.map((openness) =>
+    surfaceGeometry((t, u) =>
+      lotusLayerPoint(t, u, openness, layer, twistSign),
+    ),
+  );
+  const geometry = geometries[0];
+  geometry.morphAttributes.position = geometries
+    .slice(1)
+    .map((geometryStage) => geometryStage.attributes.position);
+  geometry.morphAttributes.normal = geometries
+    .slice(1)
+    .map((geometryStage) => geometryStage.attributes.normal);
+  geometries.slice(1).forEach((geometryStage) => geometryStage.dispose());
+
+  const edges = LOTUS_MORPH_STAGES.map((openness) => [
+    ...Array.from({ length: 33 }, (_, i) =>
+      lotusLayerPoint(i / 32, -1, openness, layer, twistSign),
+    ),
+    ...Array.from({ length: 33 }, (_, i) =>
+      lotusLayerPoint(1 - i / 32, 1, openness, layer, twistSign),
+    ),
+  ]);
+
+  const material = new THREE.MeshPhysicalMaterial({
+    color: layer.color,
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    metalness: 0.04,
+    roughness: 0.48,
+    clearcoat: 0.28,
+    clearcoatRoughness: 0.36,
+    iridescence: 0.06,
+    iridescenceIOR: 1.3,
+    emissive: new THREE.Color("#5c2135"),
+    emissiveIntensity: 0.026,
+    sheen: 0.16,
+    sheenColor: new THREE.Color("#ffdbe4"),
+    sheenRoughness: 0.72,
+  });
+
+  const resources = { geometry, edges, material };
+  lotusResourceCache.set(key, resources);
+  return resources;
+}
+
+function LotusBloomPetal({
+  layer,
+  layerIndex,
+  index,
+  bloom,
+  state,
+  motion,
+}) {
+  const meshRef = useRef();
+  const motionRef = useRef();
+  const edgeRef = useRef();
+  const last = useRef(-1);
+  const angle =
+    (index / layer.count) * TAU +
+    (layerIndex % 2 ? Math.PI / layer.count : 0);
+  const twistSign = (index + layerIndex) % 2 ? -1 : 1;
+
+  const { geometry, edges, material } = useMemo(
+    () => getLotusPetalResources(layer, twistSign),
+    [layer, twistSign],
   );
   const linePositions = useMemo(
     () => new Float32Array(edges[0].length * 3),
     [edges],
   );
+
   useLayoutEffect(() => {
-    ref.current.updateMorphTargets();
+    meshRef.current.updateMorphTargets();
     last.current = -1;
   }, [geometry]);
-  useFrame(() => {
-    // Alternating layers open in sequence, with continuous geometry all the way from bud to flower.
+
+  useFrame(({ clock }, delta) => {
+    const stagger =
+      (((index * 5 + layerIndex * 3) % layer.count) /
+        Math.max(1, layer.count - 1)) *
+      0.055;
     const amount = THREE.MathUtils.smoothstep(
       bloom.current,
-      index % 2 ? 0.18 : 0,
-      index % 2 ? 1 : 0.82,
+      layer.start + stagger,
+      Math.min(1, layer.end + stagger),
     );
-    if (Math.abs(last.current - amount) < 0.0001) return;
-    last.current = amount;
-    ref.current.morphTargetInfluences[0] = amount;
-    edges[0].forEach((p, i) => {
-      const q = edges[1][i];
-      linePositions[i * 3] = THREE.MathUtils.lerp(p.x, q.x, amount);
-      linePositions[i * 3 + 1] = THREE.MathUtils.lerp(p.y, q.y, amount);
-      linePositions[i * 3 + 2] = THREE.MathUtils.lerp(p.z, q.z, amount);
-    });
-    edgeRef.current.geometry.setPositions(linePositions);
+
+    if (Math.abs(last.current - amount) > 0.0001) {
+      last.current = amount;
+      const influences = meshRef.current.morphTargetInfluences;
+      influences[0] = 0;
+      influences[1] = 0;
+      influences[2] = 0;
+
+      let edgeA = 0;
+      let edgeB = 1;
+      let edgeMix = 0;
+
+      if (amount < 0.32) {
+        const p = THREE.MathUtils.smoothstep(amount, 0, 0.32);
+        influences[0] = p;
+        edgeMix = p;
+      } else if (amount < 0.72) {
+        const p = THREE.MathUtils.smoothstep(amount, 0.32, 0.72);
+        influences[0] = 1 - p;
+        influences[1] = p;
+        edgeA = 1;
+        edgeB = 2;
+        edgeMix = p;
+      } else {
+        const p = THREE.MathUtils.smoothstep(amount, 0.72, 1);
+        influences[1] = 1 - p;
+        influences[2] = p;
+        edgeA = 2;
+        edgeB = 3;
+        edgeMix = p;
+      }
+
+      edges[edgeA].forEach((point, i) => {
+        const next = edges[edgeB][i];
+        linePositions[i * 3] = THREE.MathUtils.lerp(
+          point.x,
+          next.x,
+          edgeMix,
+        );
+        linePositions[i * 3 + 1] = THREE.MathUtils.lerp(
+          point.y,
+          next.y,
+          edgeMix,
+        );
+        linePositions[i * 3 + 2] = THREE.MathUtils.lerp(
+          point.z,
+          next.z,
+          edgeMix,
+        );
+      });
+      edgeRef.current.geometry.setPositions(linePositions);
+    }
+
+    const settle = THREE.MathUtils.smoothstep(amount, 0.78, 1);
+    const overshoot =
+      Math.sin(settle * Math.PI) *
+      0.055 *
+      twistSign *
+      (1 - layerIndex * 0.12);
+    const ambient =
+      Math.sin(clock.elapsedTime * 0.72 + index * 0.83 + layerIndex) *
+      0.006 *
+      motion *
+      amount;
+    motionRef.current.rotation.x = damp(
+      motionRef.current.rotation.x,
+      -0.025 * amount + overshoot,
+      4,
+      delta,
+    );
+    motionRef.current.rotation.z = damp(
+      motionRef.current.rotation.z,
+      twistSign * 0.018 * amount + ambient,
+      4,
+      delta,
+    );
+
+    const sleeping = state === "sleep" && amount < 0.03;
+    const breath =
+      sleeping && motion
+        ? 1 + Math.sin(clock.elapsedTime * 0.92 + index * 0.13) * 0.005
+        : 1;
+    motionRef.current.scale.set(1, breath, 1);
   });
+
   return (
-    <group position={[0, -1.02, 0]}>
-      <mesh ref={ref} geometry={geometry}>
-        <meshPhysicalMaterial
-          color={index % 2 ? "#f3b5c4" : "#ffe4de"}
-          vertexColors
-          side={THREE.DoubleSide}
-          metalness={0.12}
-          roughness={0.4}
-          clearcoat={0.45}
-          iridescence={0.15}
-        />
-      </mesh>
-      <Line ref={edgeRef} points={edges[0]} color={GOLD} lineWidth={1} />
-      <group rotation={[0, angle, 0]} position={[0, 0.3, 0]}>
-        <Petal
-          color={JADE}
-          leaf
-          scale={[0.48, 0.7, 0.25]}
-          position={[0, -0.3, 0.16]}
-          rotation={[0.6, 0, 0]}
+    <group position={[0, -1.03, 0]} rotation={[0, angle, 0]}>
+      <group ref={motionRef}>
+        <mesh ref={meshRef} geometry={geometry} material={material} />
+        <Line
+          ref={edgeRef}
+          points={edges[0]}
+          color={GOLD}
+          lineWidth={0.8}
+          transparent
+          opacity={0.68}
         />
       </group>
     </group>
@@ -385,12 +597,15 @@ function Ripples({ state, motion }) {
   );
 }
 
-function FloatingPetals({ state, speed, motion }) {
+function FloatingPetals({ state, speed, motion, bloom }) {
   const ref = useRef();
   const phase = useRef(0);
   useFrame(({ clock }, delta) => {
     phase.current +=
       delta * 0.12 * speed * motion * (state === "working" ? 0.18 : 1);
+    const reveal = THREE.MathUtils.smoothstep(bloom.current, 0.38, 0.7);
+    ref.current.visible = reveal > 0.01;
+    ref.current.scale.setScalar(reveal);
     ref.current.rotation.y = phase.current;
     ref.current.children.forEach((child, i) => {
       child.position.y =
@@ -426,7 +641,8 @@ export default function SenModel({
   const root = useRef(),
     awake = useRef(),
     head = useRef(),
-    crystal = useRef();
+    crystal = useRef(),
+    budLight = useRef();
   const bloom = useRef(state === "sleep" ? 0 : energy / 100);
   const cfg = SEN_STATES[state] || SEN_STATES.idle;
   const motion = reducedMotion ? 0 : 1;
@@ -441,8 +657,25 @@ export default function SenModel({
     root.current.position.y =
       Math.sin(t * 1.3) * cfg.bob * hoverControl * motion;
     const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.12, 0.72);
-    awake.current.scale.setScalar(0.4 + 0.6 * emergence);
-    awake.current.position.y = -0.65 * (1 - emergence);
+    const folded = 1 - emergence;
+    awake.current.scale.set(
+      0.94 + 0.06 * emergence,
+      0.98 + 0.02 * emergence,
+      0.94 + 0.06 * emergence,
+    );
+    awake.current.position.y = -0.34 * folded;
+    awake.current.rotation.x = damp(
+      awake.current.rotation.x,
+      0.075 * folded,
+      3,
+      delta,
+    );
+    head.current.position.y = damp(
+      head.current.position.y,
+      -0.13 * folded,
+      3,
+      delta,
+    );
     head.current.rotation.z = damp(
       head.current.rotation.z,
       cfg.tilt + Math.sin(t * 0.65) * 0.016 * motion,
@@ -457,13 +690,23 @@ export default function SenModel({
     );
     head.current.rotation.x = damp(
       head.current.rotation.x,
-      -pointer.y * 0.045 * motion,
+      0.14 * folded - pointer.y * 0.045 * motion * emergence,
       3,
       delta,
     );
+    const sleepingPulse =
+      state === "sleep"
+        ? 0.1 + (Math.sin(t * 1.05) + 1) * 0.018 * motion
+        : 0.18 + 0.82 * bloom.current;
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
-      cfg.glow * coreControl * bloom.current,
+      (state === "sleep" ? 0.13 : cfg.glow) * coreControl * sleepingPulse,
+      3,
+      delta,
+    );
+    budLight.current.intensity = damp(
+      budLight.current.intensity,
+      (state === "sleep" ? 0.18 : 0.28 + bloom.current * 0.5) * coreControl,
       3,
       delta,
     );
@@ -471,6 +714,14 @@ export default function SenModel({
   });
   return (
     <group ref={root}>
+      <pointLight
+        ref={budLight}
+        position={[0, -0.12, 0.08]}
+        color="#f2a0b5"
+        intensity={0.3}
+        distance={3.1}
+        decay={2}
+      />
       <group ref={awake}>
         <group ref={head}>
           <Petal
@@ -500,7 +751,7 @@ export default function SenModel({
               clearcoat={0.15}
             />
           </mesh>
-          <Eyes state={state} motion={motion} />
+          <Eyes state={state} motion={motion} bloom={bloom} />
           {[-1, 1].map((side) => (
             <Petal
               key={side}
@@ -572,7 +823,12 @@ export default function SenModel({
           color={GOLD}
           lineWidth={1.3}
         />
-        <FloatingPetals state={state} speed={haloControl} motion={motion} />
+        <FloatingPetals
+          state={state}
+          speed={haloControl}
+          motion={motion}
+          bloom={bloom}
+        />
         {state === "working" &&
           [-1, 1].map((side) => (
             <group
@@ -613,9 +869,19 @@ export default function SenModel({
             />
           ))}
       </group>
-      {Array.from({ length: 8 }, (_, i) => (
-        <BudPetal key={i} index={i} bloom={bloom} />
-      ))}
+      {LOTUS_LAYERS.flatMap((layer, layerIndex) =>
+        Array.from({ length: layer.count }, (_, index) => (
+          <LotusBloomPetal
+            key={layer.key + "-" + index}
+            layer={layer}
+            layerIndex={layerIndex}
+            index={index}
+            bloom={bloom}
+            state={state}
+            motion={motion}
+          />
+        )),
+      )}
       {Array.from({ length: 7 }, (_, i) => (
         <group
           key={i}
