@@ -22,8 +22,8 @@ const LOTUS_LAYERS = [
   {
     key: "outer",
     count: 8,
-    start: 0,
-    end: 0.58,
+    start: 0.02,
+    end: 0.42,
     radius: 0.56,
     closedHeight: 2.18,
     openRadius: 0.22,
@@ -37,8 +37,8 @@ const LOTUS_LAYERS = [
   {
     key: "middle",
     count: 6,
-    start: 0.16,
-    end: 0.76,
+    start: 0.22,
+    end: 0.62,
     radius: 0.44,
     closedHeight: 2.23,
     openRadius: 0.18,
@@ -52,8 +52,8 @@ const LOTUS_LAYERS = [
   {
     key: "inner",
     count: 6,
-    start: 0.34,
-    end: 0.9,
+    start: 0.42,
+    end: 0.8,
     radius: 0.33,
     closedHeight: 2.28,
     openRadius: 0.13,
@@ -67,8 +67,8 @@ const LOTUS_LAYERS = [
   {
     key: "core",
     count: 4,
-    start: 0.52,
-    end: 1,
+    start: 0.58,
+    end: 0.94,
     radius: 0.24,
     closedHeight: 2.32,
     openRadius: 0.09,
@@ -246,7 +246,7 @@ function Eyes({ state, motion, bloom }) {
     const blink =
       motion && Math.sin(clock.elapsedTime * 0.85) > 0.998 ? 0.13 : 1;
     const wakeAmount = bloom
-      ? THREE.MathUtils.smoothstep(bloom.current, 0.46, 0.68)
+      ? THREE.MathUtils.smoothstep(bloom.current, 0.6, 0.72)
       : 1;
     const restAmount = state === "sleep" ? 0.08 : Math.max(0.08, wakeAmount);
     ref.current.scale.y = damp(
@@ -522,26 +522,29 @@ function LotusBloomPetal({
     }
 
     const settle = THREE.MathUtils.smoothstep(amount, 0.78, 1);
+    const transitionArc =
+      Math.sin(Math.PI * THREE.MathUtils.clamp(amount, 0, 1)) *
+      (0.075 - layerIndex * 0.009);
     const overshoot =
       Math.sin(settle * Math.PI) *
-      0.025 *
+      0.03 *
       twistSign *
       (1 - layerIndex * 0.12);
     const ambient =
       Math.sin(clock.elapsedTime * 0.72 + index * 0.83 + layerIndex) *
-      0.0035 *
+      0.0045 *
       motion *
       amount;
     motionRef.current.rotation.x = damp(
       motionRef.current.rotation.x,
-      -0.008 * amount + overshoot,
-      4,
+      -0.008 * amount - transitionArc + overshoot,
+      5,
       delta,
     );
     motionRef.current.rotation.z = damp(
       motionRef.current.rotation.z,
-      twistSign * 0.009 * amount + ambient,
-      4,
+      twistSign * (0.009 * amount + transitionArc * 0.26) + ambient,
+      5,
       delta,
     );
 
@@ -570,14 +573,55 @@ function LotusBloomPetal({
   );
 }
 
-function Ripples({ state, motion }) {
+function BloomAura({ bloom, motion, state }) {
   const ref = useRef();
   useFrame(({ clock }) => {
+    const opening = THREE.MathUtils.smoothstep(bloom.current, 0.08, 0.34);
+    const settling = 1 - THREE.MathUtils.smoothstep(bloom.current, 0.72, 0.98);
+    const visibility =
+      state === "sleep" ? 0 : opening * settling * (motion ? 1 : 0.45);
+    ref.current.visible = visibility > 0.01;
+
     ref.current.children.forEach((mesh, i) => {
-      const phase = (clock.elapsedTime * 0.3 * motion + i / 3) % 1;
-      mesh.scale.setScalar(1 + phase * 0.65);
+      const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 2.1 - i * 0.9);
+      const phaseScale = 0.86 + bloom.current * 0.45 + i * 0.16;
+      mesh.scale.setScalar(phaseScale + pulse * 0.035 * motion);
       mesh.material.opacity =
-        (1 - phase) * (state === "listening" ? 0.32 : 0.1);
+        visibility * (0.18 - i * 0.035) * (0.78 + pulse * 0.22);
+    });
+  });
+
+  return (
+    <group ref={ref} position={[0, -0.18, -0.02]} rotation={[-Math.PI / 2, 0, 0]}>
+      {[0, 1, 2].map((i) => (
+        <mesh key={i}>
+          <ringGeometry args={[0.72 + i * 0.12, 0.735 + i * 0.12, 96]} />
+          <meshBasicMaterial
+            color={i === 0 ? "#f29aad" : "#d9a67c"}
+            transparent
+            opacity={0}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Ripples({ state, motion, bloom }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    const wakeRipple =
+      Math.sin(Math.PI * THREE.MathUtils.smoothstep(bloom.current, 0.08, 0.72)) *
+      0.22;
+    ref.current.children.forEach((mesh, i) => {
+      const phase = (clock.elapsedTime * 0.46 * motion + i / 3) % 1;
+      mesh.scale.setScalar(1 + phase * (0.7 + wakeRipple));
+      mesh.material.opacity =
+        (1 - phase) *
+        (state === "listening" ? 0.34 : 0.08 + wakeRipple);
     });
   });
   return (
@@ -657,14 +701,14 @@ export default function SenModel({
     );
     root.current.position.y =
       Math.sin(t * 1.3) * cfg.bob * hoverControl * motion;
-    const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.12, 0.72);
+    const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.2, 0.72);
     const folded = 1 - emergence;
     awake.current.scale.set(
-      0.94 + 0.06 * emergence,
-      0.98 + 0.02 * emergence,
-      0.94 + 0.06 * emergence,
+      0.93 + 0.07 * emergence,
+      0.975 + 0.025 * emergence,
+      0.93 + 0.07 * emergence,
     );
-    awake.current.position.y = -0.34 * folded;
+    awake.current.position.y = -0.43 * folded;
     awake.current.rotation.x = damp(
       awake.current.rotation.x,
       0.075 * folded,
@@ -695,20 +739,28 @@ export default function SenModel({
       3,
       delta,
     );
+    const wakeFlash =
+      state === "sleep"
+        ? 0
+        : Math.sin(
+            Math.PI * THREE.MathUtils.smoothstep(bloom.current, 0.08, 0.76),
+          );
     const sleepingPulse =
       state === "sleep"
-        ? 0.1 + (Math.sin(t * 1.05) + 1) * 0.018 * motion
-        : 0.18 + 0.82 * bloom.current;
+        ? 0.12 + (Math.sin(t * 1.05) + 1) * 0.035 * motion
+        : 0.22 + 0.78 * bloom.current + wakeFlash * 0.55;
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
-      (state === "sleep" ? 0.13 : cfg.glow) * coreControl * sleepingPulse,
-      3,
+      (state === "sleep" ? 0.18 : cfg.glow) * coreControl * sleepingPulse,
+      4,
       delta,
     );
     budLight.current.intensity = damp(
       budLight.current.intensity,
-      (state === "sleep" ? 0.18 : 0.28 + bloom.current * 0.5) * coreControl,
-      3,
+      (state === "sleep"
+        ? 0.22 + Math.sin(t * 1.05) * 0.035 * motion
+        : 0.32 + bloom.current * 0.52 + wakeFlash * 0.72) * coreControl,
+      4,
       delta,
     );
     crystal.current.rotation.y += delta * 0.25 * motion;
@@ -897,7 +949,8 @@ export default function SenModel({
           />
         </group>
       ))}
-      <Ripples state={state} motion={motion} />
+      <BloomAura bloom={bloom} motion={motion} state={state} />
+      <Ripples state={state} motion={motion} bloom={bloom} />
     </group>
   );
 }
