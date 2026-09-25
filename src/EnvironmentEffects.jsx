@@ -54,17 +54,17 @@ export const PRESENCE_PHASES = {
   night: {
     key: "night",
     label: "MOONLIT",
-    ambient: "#d8d7dd",
-    keyLight: "#e2d9dc",
-    rimLight: "#cdaec4",
-    backLight: "#dfe5df",
-    ambientIntensity: 0.46,
-    keyIntensity: 1,
-    rimIntensity: 0.95,
-    backIntensity: 0.85,
-    particle: "#f1c8d3",
-    accent: "#d8c691",
-    moteCount: 28,
+    ambient: "#7f7891",
+    keyLight: "#f2ddff",
+    rimLight: "#9cc6ff",
+    backLight: "#c18bea",
+    ambientIntensity: 0.34,
+    keyIntensity: 1.55,
+    rimIntensity: 1.85,
+    backIntensity: 1.35,
+    particle: "#f0c8dc",
+    accent: "#e1ca83",
+    moteCount: 34,
   },
 };
 
@@ -128,7 +128,7 @@ function AmbientMotes({ phase, weather, reducedMotion }) {
               ? 0.72
               : 1;
       mesh.material.opacity =
-        (phase.key === "night" ? twinkle * 0.42 : twinkle * 0.26) *
+        (phase.key === "night" ? twinkle * 0.68 : twinkle * 0.26) *
         weatherOpacity;
       const scale =
         0.82 + Math.sin(time * 0.9 + mote.phase) * 0.14 * movement;
@@ -269,7 +269,7 @@ function PhaseSignature({ phase, weather, reducedMotion }) {
             <meshBasicMaterial
               color="#e6a17e"
               transparent
-              opacity={0.12 * signatureOpacity}
+              opacity={0.22 * signatureOpacity}
               depthWrite={false}
             />
           </mesh>
@@ -283,7 +283,7 @@ function PhaseSignature({ phase, weather, reducedMotion }) {
             <meshBasicMaterial
               color="#eadde4"
               transparent
-              opacity={0.42 * signatureOpacity}
+              opacity={0.68 * signatureOpacity}
               depthWrite={false}
             />
           </mesh>
@@ -302,7 +302,7 @@ function PhaseSignature({ phase, weather, reducedMotion }) {
               position={[star.x, star.y, star.z]}
               userData={{
                 twinkle: true,
-                baseOpacity: 0.28 + (i % 3) * 0.08,
+                baseOpacity: 0.42 + (i % 3) * 0.1,
               }}
             >
               <circleGeometry args={[star.size, 10]} />
@@ -577,6 +577,31 @@ export default function EnvironmentEffects({
         intensity={phase.backIntensity * lightMultiplier}
         color={phase.backLight}
       />
+      {phase.key === "night" && (
+        <>
+          <pointLight
+            position={[-2.4, 1.65, 2.35]}
+            intensity={1.35 * lightMultiplier}
+            distance={8}
+            decay={2}
+            color="#9fc7ff"
+          />
+          <pointLight
+            position={[2.1, 1.1, -1.2]}
+            intensity={0.95 * lightMultiplier}
+            distance={7}
+            decay={2}
+            color="#d590ff"
+          />
+          <pointLight
+            position={[0, -0.12, 2.5]}
+            intensity={0.48 * lightMultiplier}
+            distance={5.5}
+            decay={2}
+            color="#ffd9e5"
+          />
+        </>
+      )}
 
       <PhaseSignature
         phase={phase}
@@ -606,7 +631,7 @@ export default function EnvironmentEffects({
         <Lightformer
           position={[0, 5, -3]}
           scale={[8, 8, 1]}
-          intensity={phase.key === "night" ? 1.25 : 2}
+          intensity={phase.key === "night" ? 2.15 : 2}
           color={phase.keyLight}
         />
         <Lightformer
@@ -620,7 +645,7 @@ export default function EnvironmentEffects({
           position={[4, 2, 2]}
           rotation={[0, -Math.PI / 3, 0]}
           scale={[3, 6, 1]}
-          intensity={phase.key === "night" ? 1.2 : 2}
+          intensity={phase.key === "night" ? 1.9 : 2}
           color={phase.backLight}
         />
       </Environment>
