@@ -2200,6 +2200,321 @@ em {
   }
 }
 
+/* P2 final visual pass ----------------------------------------------------- */
+.scene-topline {
+  left: 13%;
+  right: 13%;
+  align-items: center;
+  gap: 16px;
+}
+
+.scene-topline > span {
+  white-space: nowrap;
+}
+
+.scene-topline > span:first-child,
+.scene-discoveries {
+  flex: 0 0 auto;
+}
+
+.scene-presence {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  color: #927c72;
+  letter-spacing: 1.15px;
+}
+
+.scene-presence i {
+  margin: 0 5px;
+  font-style: normal;
+  opacity: 0.5;
+}
+
+.scene-discoveries {
+  color: #a1867f;
+  letter-spacing: 1px;
+}
+
+.time-night .scene-presence,
+.time-night .scene-discoveries {
+  color: #d7c9d2;
+}
+
+.interaction-toast {
+  bottom: 58px;
+  padding: 5px 9px;
+  box-shadow: 0 8px 20px #7253460a;
+}
+
+.scene-caption {
+  bottom: 34px;
+  opacity: 0.72;
+  font-size: 11px;
+}
+
+.scene-tools {
+  bottom: 5px;
+  padding: 3px;
+  box-shadow: none;
+}
+
+.scene-tools button {
+  padding: 5px 8px;
+}
+
+/* Rituals read as one small collection, not stacked utility cards. */
+.ritual-panel {
+  width: min(300px, calc(100% - 24px));
+  padding: 13px;
+  border-radius: 18px;
+}
+
+.ritual-panel-head {
+  margin-bottom: 10px;
+  padding: 0 2px 9px;
+  border-bottom: 1px solid #eadfd7;
+}
+
+.ritual-panel-head small {
+  opacity: 0.8;
+}
+
+.ritual-panel-head strong {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.ritual-stack {
+  display: grid;
+  gap: 0;
+}
+
+.ritual-item {
+  display: grid;
+  gap: 9px;
+  padding: 12px 2px;
+}
+
+.ritual-item + .ritual-item {
+  border-top: 1px solid #ebe0d9;
+}
+
+.ritual-item-title {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 7px;
+  align-items: start;
+}
+
+.ritual-item-title > span {
+  padding-top: 2px;
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: #b28b94;
+}
+
+.ritual-item-title > div {
+  display: grid;
+  gap: 2px;
+}
+
+.ritual-item-title strong {
+  font-size: 9px;
+  font-weight: 600;
+  color: #755f5b;
+}
+
+.ritual-item-title small {
+  font-size: 7px;
+  line-height: 1.45;
+  color: #9d8a7f;
+}
+
+.thought-form {
+  gap: 7px;
+}
+
+.thought-form textarea {
+  min-height: 68px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #f8f0ebba;
+  box-shadow: inset 0 0 0 1px #e6d8d0;
+}
+
+.thought-form textarea:focus {
+  box-shadow:
+    inset 0 0 0 1px #c99ca8,
+    0 0 0 2px #dcb5c11c;
+}
+
+.thought-form > div {
+  min-height: 28px;
+}
+
+.thought-form button {
+  border: 0;
+  padding: 6px 8px;
+  background: #efe1e3;
+  color: #875d68;
+}
+
+.focus-ritual {
+  gap: 10px;
+}
+
+.focus-options button {
+  border: 0;
+  padding: 8px 6px;
+  background: #f4ebe6;
+  color: #7e6c64;
+}
+
+.focus-options button:hover {
+  background: #eadcdf;
+  color: #8a5967;
+}
+
+.capture-moment-button {
+  border: 0;
+  padding: 8px 9px;
+  background: #f4ebe6;
+}
+
+.capture-moment-button:hover {
+  background: #eadcdf;
+}
+
+.ritual-capture {
+  padding-bottom: 4px;
+}
+
+/* Focus: one focal object, one control capsule, one progress cue. */
+.focus-hud {
+  top: 20px;
+  min-height: 52px;
+  gap: 11px;
+  padding: 7px 9px 9px 11px;
+  overflow: hidden;
+}
+
+.focus-clock strong {
+  font-size: 27px;
+}
+
+.focus-progress {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #d9c9c31f;
+}
+
+.focus-progress i {
+  display: block;
+  width: var(--focus-progress);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c88a9c, #d5b376);
+  transition: width 0.35s linear;
+}
+
+.focus-mode .garden::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 55%, transparent 0 27%, #fffaf00a 47%, #684f4e12 100%),
+    linear-gradient(180deg, #fffaf007, transparent 24%, transparent 76%, #8067610c);
+}
+
+.focus-mode.time-night .garden::after {
+  background:
+    radial-gradient(circle at 50% 55%, transparent 0 28%, #3d33400d 55%, #211b241e 100%),
+    linear-gradient(180deg, #2f28320b, transparent 25%, transparent 73%, #1d171f14);
+}
+
+.focus-mode .garden-moon {
+  top: 52%;
+  width: min(58vh, 42vw);
+}
+
+.focus-mode .garden-ring {
+  top: 52%;
+  width: min(64vh, 47vw);
+}
+
+.focus-mode.time-night .focus-progress {
+  background: #e3d6df1c;
+}
+
+.focus-mode.time-night .focus-progress i {
+  background: linear-gradient(90deg, #e0b4c6, #d7c884);
+}
+
+@media (max-width: 680px) {
+  .scene-topline {
+    left: 4px;
+    right: 4px;
+    gap: 7px;
+  }
+
+  .scene-topline > span:first-child {
+    display: none;
+  }
+
+  .scene-presence {
+    text-align: left;
+    font-size: 5px;
+  }
+
+  .scene-discoveries {
+    font-size: 5px;
+  }
+
+  .scene-caption {
+    bottom: 29px;
+    font-size: 10px;
+  }
+
+  .ritual-panel {
+    padding: 11px;
+  }
+
+  .ritual-item {
+    padding: 10px 1px;
+  }
+
+  .focus-hud {
+    top: 12px;
+    min-height: 46px;
+  }
+
+  .focus-progress {
+    left: 10px;
+    right: 10px;
+    bottom: 3px;
+  }
+
+  .focus-mode .garden-moon {
+    width: min(56vh, 78vw);
+    top: 53%;
+  }
+
+  .focus-mode .garden-ring {
+    width: min(62vh, 86vw);
+    top: 53%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,
