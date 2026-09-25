@@ -1238,57 +1238,54 @@ function FloatingPetals({ state, speed, motion, bloom }) {
 function IdleMotes({ motion, strength = 1 }) {
   const particles = useRef();
   const rings = useRef();
-  const visual = 0.18 + strength * 0.92;
-  const speed = 0.45 + strength * 0.65;
+  const visual = 0.38 + strength * 0.62;
 
   useFrame(({ clock }) => {
-    const time = clock.elapsedTime;
+    const t = clock.elapsedTime;
     particles.current?.children.forEach((child, i) => {
-      const t = time * 0.3 * speed * motion + i * 0.82;
-      const angle = i * 1.73 + t * 0.12;
-      const radius = 0.78 + (i % 4) * 0.14;
+      const angle = i * 1.41 + t * 0.09 * motion;
+      const radius = 0.72 + (i % 4) * 0.15;
       child.position.set(
         Math.sin(angle) * radius,
-        -0.05 + (i % 5) * 0.34 + Math.sin(t) * 0.09 * motion,
-        Math.cos(angle) * radius * 0.38 - 0.08,
+        -0.18 + (i % 6) * 0.29 + Math.sin(t * 0.55 + i) * 0.055 * motion,
+        Math.cos(angle) * radius * 0.42 - 0.1,
       );
-      child.material.opacity = Math.min(
-        0.58,
-        (0.1 + (Math.sin(t * 1.25) + 1) * 0.055) * visual,
-      );
+      child.material.opacity =
+        (0.18 + (Math.sin(t * 0.75 + i) + 1) * 0.06) * visual;
     });
     rings.current?.children.forEach((mesh, i) => {
-      const pulse = 0.92 + Math.sin(time * (0.42 + i * 0.08)) * 0.05 * motion;
-      mesh.scale.setScalar(pulse * (1 + i * 0.12));
-      mesh.material.opacity = (0.045 + i * 0.018) * visual;
+      const pulse = 0.94 + Math.sin(t * (0.42 + i * 0.09)) * 0.045 * motion;
+      mesh.scale.setScalar(pulse * (1 + i * 0.1));
+      mesh.material.opacity = (0.07 + i * 0.022) * visual;
     });
   });
 
   return (
     <group>
       <group ref={particles}>
-        {Array.from({ length: 10 }, (_, i) => (
+        {Array.from({ length: 12 }, (_, i) => (
           <mesh key={i}>
-            <sphereGeometry args={[0.024 + (i % 3) * 0.007, 10, 8]} />
+            <sphereGeometry args={[0.025 + (i % 3) * 0.006, 10, 8]} />
             <meshBasicMaterial
-              color={i % 4 === 0 ? GOLD : i % 3 === 0 ? JADE : "#f4b8c7"}
+              color={i % 4 === 0 ? "#d7b77d" : i % 3 === 0 ? "#9ab59d" : "#efb2c5"}
               transparent
-              opacity={0.18}
+              opacity={0.2}
               depthWrite={false}
             />
           </mesh>
         ))}
       </group>
-      <group ref={rings} position={[0, -0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        {[0, 1].map((i) => (
+      <group ref={rings} position={[0, -0.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {[0, 1, 2].map((i) => (
           <mesh key={i}>
-            <ringGeometry args={[0.7 + i * 0.16, 0.708 + i * 0.16, 80]} />
+            <ringGeometry args={[0.62 + i * 0.17, 0.63 + i * 0.17, 80]} />
             <meshBasicMaterial
-              color={i ? "#d8b58c" : "#9aae9d"}
+              color={i === 1 ? "#e6b6c2" : "#9fb39f"}
               transparent
-              opacity={0.06}
+              opacity={0.08}
               depthWrite={false}
               side={THREE.DoubleSide}
+              blending={THREE.AdditiveBlending}
             />
           </mesh>
         ))}
@@ -1300,58 +1297,73 @@ function IdleMotes({ motion, strength = 1 }) {
 function ThinkingEffect({ motion, strength = 1 }) {
   const orbit = useRef();
   const rings = useRef();
-  const visual = 0.18 + strength * 0.92;
-  const speed = 0.55 + strength * 0.7;
+  const halo = useRef();
+  const visual = 0.42 + strength * 0.58;
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    orbit.current.rotation.y = t * 0.58 * speed * motion;
-    orbit.current.rotation.z = Math.sin(t * 0.5) * 0.055 * motion;
+    orbit.current.rotation.y = t * 0.62 * motion;
+    orbit.current.rotation.z = Math.sin(t * 0.42) * 0.08 * motion;
     orbit.current.children.forEach((child, i) => {
-      child.position.y = Math.sin(t * 1.35 + i) * 0.09 * motion;
-      child.rotation.y += 0.015 * motion * speed;
-      child.rotation.z += 0.022 * motion * speed;
+      child.position.y = Math.sin(t * 1.45 + i) * 0.12 * motion;
+      child.rotation.y += 0.02 * motion;
+      child.rotation.z += 0.028 * motion;
       child.material.opacity = Math.min(
-        0.95,
-        (0.42 + (Math.sin(t * 2 + i) + 1) * 0.18) * visual,
+        0.98,
+        (0.58 + (Math.sin(t * 1.7 + i) + 1) * 0.12) * visual,
       );
     });
     rings.current?.children.forEach((mesh, i) => {
-      mesh.rotation.z = (i ? -1 : 1) * t * 0.18 * speed * motion;
-      mesh.material.opacity = (0.12 + i * 0.04) * visual;
+      mesh.rotation.z = (i ? -1 : 1) * t * (0.2 + i * 0.04) * motion;
+      mesh.material.opacity = (0.2 + i * 0.045) * visual;
     });
+    if (halo.current) {
+      const pulse = 0.95 + Math.sin(t * 1.2) * 0.06 * motion;
+      halo.current.scale.setScalar(pulse);
+      halo.current.material.opacity = 0.13 * visual;
+    }
   });
 
   return (
-    <group position={[0, 0.94, 0]}>
+    <group position={[0, 0.96, 0]}>
+      <mesh ref={halo} position={[0, 0.04, -0.38]}>
+        <circleGeometry args={[0.66, 64]} />
+        <meshBasicMaterial
+          color="#b9a4ed"
+          transparent
+          opacity={0.12}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
       <group ref={rings}>
-        <mesh rotation={[1.18, 0.2, 0.22]}>
-          <torusGeometry args={[0.83, 0.008, 8, 96]} />
-          <meshBasicMaterial color="#d6aa72" transparent opacity={0.18} depthWrite={false} />
+        <mesh rotation={[1.12, 0.2, 0.24]}>
+          <torusGeometry args={[0.8, 0.012, 8, 96]} />
+          <meshBasicMaterial color="#c3abf3" transparent opacity={0.24} depthWrite={false} />
         </mesh>
-        <mesh rotation={[1.02, -0.45, -0.38]}>
-          <torusGeometry args={[1.02, 0.006, 8, 96]} />
-          <meshBasicMaterial color="#d998ac" transparent opacity={0.13} depthWrite={false} />
+        <mesh rotation={[0.98, -0.46, -0.4]}>
+          <torusGeometry args={[1.04, 0.009, 8, 96]} />
+          <meshBasicMaterial color="#e2b96f" transparent opacity={0.2} depthWrite={false} />
         </mesh>
       </group>
       <group ref={orbit}>
-        {Array.from({ length: 9 }, (_, i) => {
-          const angle = (i / 9) * TAU;
+        {Array.from({ length: 10 }, (_, i) => {
+          const angle = (i / 10) * TAU;
           return (
             <mesh
               key={i}
               position={[
-                Math.sin(angle) * (0.9 + (i % 2) * 0.16),
+                Math.sin(angle) * (0.92 + (i % 2) * 0.14),
                 0,
                 Math.cos(angle) * 0.62,
               ]}
               rotation={[0.2, angle, Math.PI / 4]}
             >
-              <octahedronGeometry args={[0.058 + (i % 3) * 0.013, 0]} />
+              <octahedronGeometry args={[0.055 + (i % 3) * 0.015, 0]} />
               <meshBasicMaterial
-                color={i % 3 === 0 ? "#d8ad72" : "#ef9fb8"}
+                color={i % 3 === 0 ? "#e3bd72" : i % 2 ? "#c4aff8" : "#e5a8c4"}
                 transparent
-                opacity={0.68}
+                opacity={0.78}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
               />
@@ -1366,35 +1378,34 @@ function ThinkingEffect({ motion, strength = 1 }) {
 function ListeningEffect({ motion, strength = 1 }) {
   const waves = useRef();
   const center = useRef();
-  const visual = 0.18 + strength * 0.92;
-  const speed = 0.52 + strength * 0.72;
+  const visual = 0.46 + strength * 0.54;
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
     waves.current?.children.forEach((sideGroup, sideIndex) => {
       sideGroup.children.forEach((mesh, i) => {
-        const phase = (t * 0.92 * speed * motion + i * 0.2) % 1;
-        mesh.scale.setScalar(0.62 + phase * (0.82 + strength * 0.16));
+        const phase = (t * 0.86 * motion + i * 0.18) % 1;
+        mesh.scale.setScalar(0.62 + phase * 1.05);
         mesh.material.opacity =
-          (1 - phase) * Math.max(0.05, (0.46 - i * 0.075) * visual);
+          (1 - phase) * Math.max(0.08, (0.58 - i * 0.08) * visual);
       });
-      sideGroup.position.y = 0.76 + Math.sin(t * 1.45 + sideIndex) * 0.035 * motion;
+      sideGroup.position.y = 0.78 + Math.sin(t * 1.3 + sideIndex) * 0.035 * motion;
     });
     if (center.current) {
-      const pulse = 0.82 + (Math.sin(t * 2.2 * speed) + 1) * 0.16;
+      const pulse = 0.86 + (Math.sin(t * 2.15) + 1) * 0.18;
       center.current.scale.setScalar(pulse);
-      center.current.material.opacity = 0.1 * visual;
+      center.current.material.opacity = 0.18 * visual;
     }
   });
 
   return (
     <group>
-      <mesh ref={center} position={[0, 0.78, -0.14]} rotation={[0, 0, 0]}>
-        <ringGeometry args={[0.52, 0.535, 80]} />
+      <mesh ref={center} position={[0, 0.8, -0.18]}>
+        <ringGeometry args={[0.48, 0.5, 80]} />
         <meshBasicMaterial
-          color="#9eb3a5"
+          color="#7fd0c7"
           transparent
-          opacity={0.12}
+          opacity={0.16}
           depthWrite={false}
           side={THREE.DoubleSide}
           blending={THREE.AdditiveBlending}
@@ -1404,16 +1415,16 @@ function ListeningEffect({ motion, strength = 1 }) {
         {[-1, 1].map((side) => (
           <group
             key={side}
-            position={[side * 0.83, 0.76, 0.1]}
+            position={[side * 0.78, 0.78, 0.08]}
             rotation={[0, side * Math.PI / 2, 0]}
           >
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <mesh key={i}>
-                <ringGeometry args={[0.25 + i * 0.1, 0.266 + i * 0.1, 64]} />
+                <ringGeometry args={[0.22 + i * 0.095, 0.238 + i * 0.095, 64]} />
                 <meshBasicMaterial
-                  color={i % 2 ? "#d8aa81" : "#85a493"}
+                  color={i % 2 ? "#a8dfd5" : "#6dc4bb"}
                   transparent
-                  opacity={0.3}
+                  opacity={0.36}
                   depthWrite={false}
                   side={THREE.DoubleSide}
                   blending={THREE.AdditiveBlending}
@@ -1430,33 +1441,32 @@ function ListeningEffect({ motion, strength = 1 }) {
 function WorkingEffect({ motion, strength = 1 }) {
   const panels = useRef();
   const nodes = useRef();
-  const visual = 0.18 + strength * 0.92;
-  const speed = 0.5 + strength * 0.72;
+  const visual = 0.44 + strength * 0.56;
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    panels.current.rotation.y = t * 0.34 * speed * motion;
+    panels.current.rotation.y = t * 0.28 * motion;
     panels.current.children.forEach((panel, i) => {
-      const phase = t * 1.3 + i * 1.25;
-      panel.position.y = -0.04 + Math.sin(phase) * 0.1 * motion;
-      panel.rotation.z = Math.sin(phase * 0.75) * 0.09 * motion;
+      const phase = t * 1.18 + i * 1.2;
+      panel.position.y = -0.02 + Math.sin(phase) * 0.075 * motion;
+      panel.rotation.z = Math.sin(phase * 0.72) * 0.055 * motion;
       const mesh = panel.children[0];
       if (mesh?.material) {
         mesh.material.opacity = Math.min(
-          0.46,
-          (0.18 + (Math.sin(phase) + 1) * 0.05) * visual,
+          0.56,
+          (0.3 + (Math.sin(phase) + 1) * 0.055) * visual,
         );
       }
     });
     nodes.current?.children.forEach((node, i) => {
-      const angle = t * 0.72 * speed * motion + (i / 7) * TAU;
-      const radius = 0.58 + (i % 2) * 0.08;
+      const angle = t * 0.78 * motion + (i / 8) * TAU;
+      const radius = 0.55 + (i % 2) * 0.12;
       node.position.set(
         Math.sin(angle) * radius,
-        0.15 + Math.sin(angle * 2 + i) * 0.06,
-        Math.cos(angle) * 0.35 + 0.25,
+        0.16 + Math.sin(angle * 2 + i) * 0.08,
+        Math.cos(angle) * 0.34 + 0.28,
       );
-      node.material.opacity = Math.min(0.9, (0.28 + (i % 3) * 0.07) * visual);
+      node.material.opacity = Math.min(0.95, (0.45 + (i % 3) * 0.08) * visual);
     });
   });
 
@@ -1464,23 +1474,23 @@ function WorkingEffect({ motion, strength = 1 }) {
     <group>
       <group ref={panels}>
         {Array.from({ length: 5 }, (_, i) => {
-          const angle = (i / 5) * TAU + 0.35;
+          const angle = (i / 5) * TAU + 0.32;
           return (
             <group
               key={i}
               position={[
-                Math.sin(angle) * 1.16,
-                -0.04,
-                Math.cos(angle) * 0.72,
+                Math.sin(angle) * 1.12,
+                -0.02,
+                Math.cos(angle) * 0.7,
               ]}
-              rotation={[0, -angle, i % 2 ? -0.06 : 0.06]}
+              rotation={[0, -angle, i % 2 ? -0.04 : 0.04]}
             >
               <mesh>
-                <planeGeometry args={[0.38, 0.27]} />
+                <planeGeometry args={[0.42, 0.3]} />
                 <meshBasicMaterial
-                  color={i % 2 ? JADE : "#8a9c8d"}
+                  color={i % 2 ? "#789d78" : "#9db67e"}
                   transparent
-                  opacity={0.22}
+                  opacity={0.34}
                   depthWrite={false}
                   side={THREE.DoubleSide}
                 />
@@ -1489,17 +1499,13 @@ function WorkingEffect({ motion, strength = 1 }) {
                 <Line
                   key={lineIndex}
                   points={[
-                    [-0.12, 0.064 - lineIndex * 0.062, 0.006],
-                    [
-                      0.05 + lineIndex * 0.035,
-                      0.064 - lineIndex * 0.062,
-                      0.006,
-                    ],
+                    [-0.13, 0.07 - lineIndex * 0.066, 0.006],
+                    [0.07 + lineIndex * 0.03, 0.07 - lineIndex * 0.066, 0.006],
                   ]}
-                  color={lineIndex === 0 ? "#d8b174" : "#afc1b1"}
-                  lineWidth={1.45}
+                  color={lineIndex === 0 ? "#e4ba67" : "#d6e3c8"}
+                  lineWidth={1.6}
                   transparent
-                  opacity={0.86}
+                  opacity={0.92}
                 />
               ))}
             </group>
@@ -1507,13 +1513,13 @@ function WorkingEffect({ motion, strength = 1 }) {
         })}
       </group>
       <group ref={nodes}>
-        {Array.from({ length: 7 }, (_, i) => (
+        {Array.from({ length: 8 }, (_, i) => (
           <mesh key={i}>
-            <octahedronGeometry args={[0.026 + (i % 2) * 0.008, 0]} />
+            <octahedronGeometry args={[0.03 + (i % 2) * 0.008, 0]} />
             <meshBasicMaterial
-              color={i % 3 === 0 ? "#d6ae73" : "#9db5a3"}
+              color={i % 3 === 0 ? "#e2b761" : "#95bd82"}
               transparent
-              opacity={0.38}
+              opacity={0.56}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
             />
@@ -1527,58 +1533,57 @@ function WorkingEffect({ motion, strength = 1 }) {
 function SuccessEffect({ motion, strength = 1 }) {
   const particles = useRef();
   const rings = useRef();
-  const visual = 0.18 + strength * 0.92;
-  const speed = 0.48 + strength * 0.7;
+  const visual = 0.48 + strength * 0.52;
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
     particles.current.children.forEach((child, i) => {
-      const phase = (t * 0.42 * speed * (motion ? 1 : 0.22) + i / 20) % 1;
-      const angle = i * 2.03 + phase * 1.15;
-      const radius = 0.46 + (i % 5) * 0.15 + phase * 0.22;
+      const phase = (t * 0.48 * (motion ? 1 : 0.22) + i / 28) % 1;
+      const angle = i * 1.83 + phase * 1.4;
+      const radius = 0.38 + (i % 6) * 0.14 + phase * 0.3;
       child.position.set(
         Math.sin(angle) * radius,
-        -0.68 + phase * 3.35,
-        Math.cos(angle) * 0.46 - 0.14,
+        -0.72 + phase * 3.55,
+        Math.cos(angle) * 0.5 - 0.12,
       );
-      child.rotation.z = angle + phase * 2.5;
-      child.rotation.x = 0.16 + phase * 0.8;
+      child.rotation.z = angle + phase * 3;
+      child.rotation.x = 0.16 + phase * 0.9;
       const scale =
-        Math.sin(Math.PI * phase) * (i % 4 === 0 ? 1.2 : 0.94) * visual;
+        Math.sin(Math.PI * phase) * (i % 4 === 0 ? 1.35 : 1) * visual;
       child.scale.setScalar(Math.max(0.05, scale));
       child.children.forEach((part) => {
         if (part.material) {
           part.material.opacity = Math.min(
             1,
-            Math.sin(Math.PI * phase) * 0.94 * visual,
+            Math.sin(Math.PI * phase) * 0.98 * visual,
           );
         }
       });
     });
     rings.current?.children.forEach((mesh, i) => {
-      const phase = (t * 0.38 * speed + i * 0.22) % 1;
-      mesh.scale.setScalar(0.52 + phase * 1.3);
-      mesh.material.opacity = (1 - phase) * 0.22 * visual;
+      const phase = (t * 0.42 + i * 0.18) % 1;
+      mesh.scale.setScalar(0.46 + phase * 1.55);
+      mesh.material.opacity = (1 - phase) * 0.3 * visual;
     });
   });
 
   return (
     <group>
       <group ref={particles}>
-        {Array.from({ length: 20 }, (_, i) => (
+        {Array.from({ length: 28 }, (_, i) => (
           <group key={i}>
             {i % 4 === 0 ? (
               <Petal
-                scale={[0.12, 0.19, 0.13]}
-                color={i % 2 ? "#f0a1b9" : "#ffd7df"}
+                scale={[0.13, 0.21, 0.14]}
+                color={i % 2 ? "#f09db8" : "#ffd6df"}
               />
             ) : (
               <mesh rotation={[0, 0, Math.PI / 4]}>
-                <octahedronGeometry args={[0.045 + (i % 3) * 0.014, 0]} />
+                <octahedronGeometry args={[0.05 + (i % 3) * 0.015, 0]} />
                 <meshBasicMaterial
-                  color={i % 2 ? "#f0acc0" : "#d9ae6f"}
+                  color={i % 3 === 0 ? "#f0b0c4" : "#edc16f"}
                   transparent
-                  opacity={0.85}
+                  opacity={0.92}
                   depthWrite={false}
                   blending={THREE.AdditiveBlending}
                 />
@@ -1588,13 +1593,13 @@ function SuccessEffect({ motion, strength = 1 }) {
         ))}
       </group>
       <group ref={rings} position={[0, -0.74, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <mesh key={i}>
-            <ringGeometry args={[0.52 + i * 0.11, 0.535 + i * 0.11, 80]} />
+            <ringGeometry args={[0.48 + i * 0.105, 0.495 + i * 0.105, 80]} />
             <meshBasicMaterial
-              color={i === 1 ? "#d7b06d" : "#dc9fb2"}
+              color={i % 2 ? "#edbf6b" : "#e99fb8"}
               transparent
-              opacity={0.2}
+              opacity={0.24}
               depthWrite={false}
               side={THREE.DoubleSide}
               blending={THREE.AdditiveBlending}
@@ -1609,54 +1614,54 @@ function SuccessEffect({ motion, strength = 1 }) {
 function SleepEffect({ motion, strength = 1 }) {
   const dust = useRef();
   const crescent = useRef();
-  const visual = 0.18 + strength * 0.92;
-  const speed = 0.45 + strength * 0.55;
+  const visual = 0.44 + strength * 0.56;
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
     dust.current.children.forEach((child, i) => {
-      const phase = (t * 0.07 * speed * (motion ? 1 : 0.24) + i / 12) % 1;
-      const angle = i * 1.67 + phase * 0.75;
+      const phase = (t * 0.065 * (motion ? 1 : 0.24) + i / 16) % 1;
+      const angle = i * 1.57 + phase * 0.7;
       child.position.set(
-        Math.sin(angle) * (0.58 + (i % 4) * 0.17),
-        1.76 - phase * 2.35,
-        Math.cos(angle) * 0.46 - 0.14,
+        Math.sin(angle) * (0.54 + (i % 5) * 0.15),
+        1.82 - phase * 2.45,
+        Math.cos(angle) * 0.48 - 0.15,
       );
-      const twinkle = 0.4 + 0.6 * Math.sin(Math.PI * phase);
-      child.scale.setScalar(0.72 + twinkle * 0.38);
+      const twinkle = 0.42 + 0.58 * Math.sin(Math.PI * phase);
+      child.scale.setScalar(0.76 + twinkle * 0.42);
       child.material.opacity = Math.min(
-        0.55,
-        (0.07 + twinkle * 0.22) * visual,
+        0.64,
+        (0.11 + twinkle * 0.25) * visual,
       );
     });
     if (crescent.current) {
-      crescent.current.rotation.z = -0.28 + Math.sin(t * 0.24) * 0.06 * motion;
+      crescent.current.rotation.z = -0.28 + Math.sin(t * 0.22) * 0.05 * motion;
       crescent.current.material.opacity =
-        (0.1 + (Math.sin(t * 0.55) + 1) * 0.025) * visual;
+        (0.18 + (Math.sin(t * 0.5) + 1) * 0.04) * visual;
     }
   });
 
   return (
     <group>
       <group ref={dust}>
-        {Array.from({ length: 12 }, (_, i) => (
+        {Array.from({ length: 16 }, (_, i) => (
           <mesh key={i}>
-            <sphereGeometry args={[0.027 + (i % 3) * 0.008, 10, 8]} />
+            <sphereGeometry args={[0.028 + (i % 3) * 0.009, 10, 8]} />
             <meshBasicMaterial
-              color={i % 3 === 0 ? "#d7c37e" : "#9fb39e"}
+              color={i % 4 === 0 ? "#d9c78c" : i % 2 ? "#a9bce7" : "#c6a9dc"}
               transparent
-              opacity={0.22}
+              opacity={0.3}
               depthWrite={false}
+              blending={THREE.AdditiveBlending}
             />
           </mesh>
         ))}
       </group>
-      <mesh ref={crescent} position={[0.78, 1.36, -0.12]} rotation={[0, 0, -0.28]}>
-        <torusGeometry args={[0.19, 0.015, 8, 64, Math.PI * 1.42]} />
+      <mesh ref={crescent} position={[0.82, 1.42, -0.12]} rotation={[0, 0, -0.28]}>
+        <torusGeometry args={[0.22, 0.018, 8, 64, Math.PI * 1.42]} />
         <meshBasicMaterial
-          color="#d8c88f"
+          color="#b7c8f2"
           transparent
-          opacity={0.13}
+          opacity={0.22}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
