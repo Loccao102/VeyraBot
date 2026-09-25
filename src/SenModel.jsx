@@ -9,6 +9,41 @@ const PINK = "#eda1b6",
   JADE = "#688a70";
 const TAU = Math.PI * 2;
 const damp = THREE.MathUtils.damp;
+
+function applyGazeDeadZone(value, zone = 0.08) {
+  const absolute = Math.abs(value);
+  if (absolute <= zone) return 0;
+  return Math.sign(value) * ((absolute - zone) / (1 - zone));
+}
+
+function useGlobalGazePointer() {
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const { gl } = useThree();
+
+  useEffect(() => {
+    const updatePointer = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+
+      pointerRef.current.x = THREE.MathUtils.clamp(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -1,
+        1,
+      );
+      pointerRef.current.y = THREE.MathUtils.clamp(
+        -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+        -1,
+        1,
+      );
+    };
+
+    window.addEventListener("pointermove", updatePointer, { passive: true });
+    return () => window.removeEventListener("pointermove", updatePointer);
+  }, [gl]);
+
+  return pointerRef;
+}
+
 export const SEN_STATES = {
   idle: { bloom: 0, tilt: 0, glow: 0.45, bob: 0.045 },
   thinking: { bloom: -0.12, tilt: -0.12, glow: 0.65, bob: 0.025 },
@@ -240,32 +275,9 @@ function CrownPetal({ side, index, state, motion, bloom }) {
   );
 }
 
-function Eyes({ state, motion, bloom }) {
+function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
   const ref = useRef();
   const gazeRefs = useRef({});
-  const pointerRef = useRef({ x: 0, y: 0 });
-  const { gl } = useThree();
-
-  useEffect(() => {
-    const updatePointer = (event) => {
-      const rect = gl.domElement.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-
-      pointerRef.current.x = THREE.MathUtils.clamp(
-        ((event.clientX - rect.left) / rect.width) * 2 - 1,
-        -1,
-        1,
-      );
-      pointerRef.current.y = THREE.MathUtils.clamp(
-        -(((event.clientY - rect.top) / rect.height) * 2 - 1),
-        -1,
-        1,
-      );
-    };
-
-    window.addEventListener("pointermove", updatePointer, { passive: true });
-    return () => window.removeEventListener("pointermove", updatePointer);
-  }, [gl]);
 
   useFrame(({ clock }, delta) => {
     const blink =
@@ -284,19 +296,23 @@ function Eyes({ state, motion, bloom }) {
       delta,
     );
 
-    const gazeAmount =
+    const stateGaze =
       state === "sleep" || state === "success"
         ? 0
         : state === "thinking"
-          ? 0.86
-          : 1;
+          ? 0.72
+          : state === "listening"
+            ? 1.05
+            : 1;
+    const focusGaze = focusActive ? 0.55 : 1;
+    const gazeAmount = stateGaze * focusGaze;
+    const gazeX = applyGazeDeadZone(gazePointer?.current?.x ?? 0);
+    const gazeY = applyGazeDeadZone(gazePointer?.current?.y ?? 0);
 
-    // Cursor response is interaction feedback, so do not suppress it with
-    // prefers-reduced-motion. Reduced motion only affects ambient animation.
-    const targetX =
-      pointerRef.current.x * 0.044 * wakeAmount * gazeAmount;
-    const targetY =
-      pointerRef.current.y * 0.052 * wakeAmount * gazeAmount;
+    // Pupils only lead the shared gaze target slightly. The head carries most
+    // of the motion so Sen feels attentive rather than uncanny.
+    const targetX = gazeX * 0.024 * wakeAmount * gazeAmount;
+    const targetY = gazeY * 0.019 * wakeAmount * gazeAmount;
 
     [-1, 1].forEach((side) => {
       const gaze = gazeRefs.current[side];
@@ -306,7 +322,7 @@ function Eyes({ state, motion, bloom }) {
       gaze.position.y = damp(gaze.position.y, targetY, 16, delta);
       gaze.rotation.z = damp(
         gaze.rotation.z,
-        -pointerRef.current.x * 0.05 * side * gazeAmount,
+        -gazeX * 0.022 * side * gazeAmount,
         12,
         delta,
       );
@@ -1307,6 +1323,7 @@ export default function SenModel({
   interaction = null,
   interactionEnabled = true,
   ritual = null,
+  focusActive = false,
 }) {
   const root = useRef(),
     awake = useRef(),
@@ -1314,6 +1331,7 @@ export default function SenModel({
     crystal = useRef(),
     budLight = useRef();
   const sidePetals = useRef({});
+  const gazePointer = useGlobalGazePointer();
   const bloom = useRef(state === "sleep" ? 0 : energy / 100);
   const reaction = interaction?.reaction ?? {
     type: "none",
@@ -1353,7 +1371,7 @@ export default function SenModel({
   );
   const cfg = SEN_STATES[state] || SEN_STATES.idle;
   const motion = reducedMotion ? 0 : 1;
-  useFrame(({ clock, pointer }, delta) => {
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime;
     const interactionNow =
       typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -1408,6 +1426,17 @@ export default function SenModel({
             ? 1.08
             : 1;
     const presenceCalm = phaseCalm * weatherCalm * moodBias;
+    const gazeState =
+      state === "sleep" || state === "success"
+        ? 0
+        : state === "thinking"
+          ? 0.72
+          : state === "listening"
+            ? 1.05
+            : 1;
+    const gazeStrength = gazeState * (focusActive ? 0.55 : 1);
+    const gazeX = applyGazeDeadZone(gazePointer.current.x) * gazeStrength;
+    const gazeY = applyGazeDeadZone(gazePointer.current.y) * gazeStrength;
     const autonomous = state === "idle" ? motion : 0;
     const idleLook =
       (Math.sin(t * 0.17) * 0.075 +
@@ -1444,14 +1473,14 @@ export default function SenModel({
       Math.sin(t * 0.31 + 1.2) * 0.012 * autonomous * presenceCalm;
     awake.current.rotation.x = damp(
       awake.current.rotation.x,
-      0.075 * folded,
-      3,
+      0.075 * folded - gazeY * 0.018 * emergence,
+      2.6,
       delta,
     );
     awake.current.rotation.y = damp(
       awake.current.rotation.y,
-      idleLook * 0.36,
-      1.7,
+      idleLook * 0.28 + gazeX * 0.038 * emergence,
+      2.1,
       delta,
     );
     head.current.position.y = damp(
@@ -1477,24 +1506,24 @@ export default function SenModel({
     );
     head.current.rotation.y = damp(
       head.current.rotation.y,
-      pointer.x *
-        (headHover ? 0.21 : 0.12) *
-        motion *
+      gazeX *
+        (headHover ? 0.21 : 0.17) *
+        emergence *
         (1 - quietGaze * 0.92) +
         idleLook * (1 - quietGaze) +
         shy * 0.18,
-      headHover ? 5 : 2.4,
+      headHover ? 6.2 : 6,
       delta,
     );
     head.current.rotation.x = damp(
       head.current.rotation.x,
       0.14 * folded -
-        pointer.y * (headHover ? 0.072 : 0.045) * motion * emergence +
+        gazeY * (headHover ? 0.105 : 0.082) * emergence +
         Math.sin(t * 0.13 + 2.2) * 0.018 * autonomous * presenceCalm +
         headPat * 0.075 +
         shy * 0.055 -
         quietGaze * 0.028,
-      headHover ? 5 : 2.4,
+      headHover ? 6.2 : 5.6,
       delta,
     );
 
@@ -1628,7 +1657,13 @@ export default function SenModel({
               clearcoat={0.15}
             />
           </mesh>
-          <Eyes state={state} motion={motion} bloom={bloom} />
+          <Eyes
+            state={state}
+            motion={motion}
+            bloom={bloom}
+            gazePointer={gazePointer}
+            focusActive={focusActive}
+          />
           {characterInteractionEnabled && (
             <mesh
               position={[0, 0.8, 0.24]}
