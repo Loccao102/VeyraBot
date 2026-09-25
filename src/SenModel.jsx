@@ -675,6 +675,277 @@ function FloatingPetals({ state, speed, motion, bloom }) {
   );
 }
 
+
+function IdleMotes({ motion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    ref.current.children.forEach((child, i) => {
+      const t = clock.elapsedTime * 0.28 * motion + i * 0.9;
+      child.position.y = 0.15 + (i % 3) * 0.48 + Math.sin(t) * 0.08;
+      child.position.x =
+        (i % 2 ? 1 : -1) * (0.85 + (i % 3) * 0.16) + Math.cos(t * 0.7) * 0.05;
+      child.material.opacity = 0.14 + (Math.sin(t * 1.3) + 1) * 0.05;
+    });
+  });
+  return (
+    <group ref={ref}>
+      {Array.from({ length: 6 }, (_, i) => (
+        <mesh key={i} position={[0, 0.2, -0.2 - (i % 2) * 0.2]}>
+          <sphereGeometry args={[0.026 + (i % 2) * 0.008, 10, 8]} />
+          <meshBasicMaterial
+            color={i % 3 === 0 ? GOLD : "#f4b8c7"}
+            transparent
+            opacity={0.16}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function ThinkingEffect({ motion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    ref.current.rotation.y = clock.elapsedTime * 0.48 * motion;
+    ref.current.rotation.z = Math.sin(clock.elapsedTime * 0.5) * 0.04 * motion;
+    ref.current.children.forEach((child, i) => {
+      child.position.y = Math.sin(clock.elapsedTime * 1.15 + i) * 0.07;
+      child.rotation.y += 0.012 * motion;
+      child.rotation.z += 0.018 * motion;
+      child.material.opacity =
+        0.45 + (Math.sin(clock.elapsedTime * 1.8 + i) + 1) * 0.16;
+    });
+  });
+
+  return (
+    <group ref={ref} position={[0, 1.0, 0]}>
+      {Array.from({ length: 7 }, (_, i) => {
+        const angle = (i / 7) * TAU;
+        return (
+          <mesh
+            key={i}
+            position={[
+              Math.sin(angle) * (0.92 + (i % 2) * 0.12),
+              0,
+              Math.cos(angle) * 0.58,
+            ]}
+            rotation={[0.2, angle, Math.PI / 4]}
+          >
+            <octahedronGeometry args={[0.055 + (i % 3) * 0.012, 0]} />
+            <meshBasicMaterial
+              color={i % 2 ? "#f0a9bd" : GOLD}
+              transparent
+              opacity={0.62}
+              depthWrite={false}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function ListeningEffect({ motion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    ref.current.children.forEach((sideGroup, sideIndex) => {
+      sideGroup.children.forEach((mesh, i) => {
+        const phase = (clock.elapsedTime * 0.82 * motion + i * 0.24) % 1;
+        mesh.scale.setScalar(0.7 + phase * 0.72);
+        mesh.material.opacity = (1 - phase) * (0.34 - i * 0.055);
+      });
+      sideGroup.position.y =
+        0.78 + Math.sin(clock.elapsedTime * 1.3 + sideIndex) * 0.025 * motion;
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {[-1, 1].map((side) => (
+        <group
+          key={side}
+          position={[side * 0.82, 0.78, 0.12]}
+          rotation={[0, side * Math.PI / 2, 0]}
+        >
+          {[0, 1, 2].map((i) => (
+            <mesh key={i}>
+              <ringGeometry args={[0.28 + i * 0.09, 0.292 + i * 0.09, 64]} />
+              <meshBasicMaterial
+                color={i === 0 ? "#8da798" : "#d9b08a"}
+                transparent
+                opacity={0.28}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function WorkingEffect({ motion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    ref.current.rotation.y = clock.elapsedTime * 0.28 * motion;
+    ref.current.children.forEach((panel, i) => {
+      const t = clock.elapsedTime * 1.15 + i * 1.4;
+      panel.position.y = -0.08 + Math.sin(t) * 0.09 * motion;
+      panel.rotation.z = Math.sin(t * 0.8) * 0.08 * motion;
+      const mesh = panel.children[0];
+      if (mesh?.material) {
+        mesh.material.opacity = 0.13 + (Math.sin(t) + 1) * 0.035;
+      }
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {Array.from({ length: 4 }, (_, i) => {
+        const angle = (i / 4) * TAU + 0.45;
+        return (
+          <group
+            key={i}
+            position={[
+              Math.sin(angle) * 1.22,
+              -0.08,
+              Math.cos(angle) * 0.72,
+            ]}
+            rotation={[0, -angle, i % 2 ? -0.05 : 0.05]}
+          >
+            <mesh>
+              <planeGeometry args={[0.34, 0.24]} />
+              <meshBasicMaterial
+                color={JADE}
+                transparent
+                opacity={0.15}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+            {[0, 1, 2].map((lineIndex) => (
+              <Line
+                key={lineIndex}
+                points={[
+                  [-0.11, 0.055 - lineIndex * 0.055, 0.006],
+                  [
+                    0.04 + lineIndex * 0.03,
+                    0.055 - lineIndex * 0.055,
+                    0.006,
+                  ],
+                ]}
+                color={lineIndex === 0 ? "#d6b47f" : JADE}
+                lineWidth={1.25}
+                transparent
+                opacity={0.75}
+              />
+            ))}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+function SuccessEffect({ motion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    const speed = motion ? 0.34 : 0.08;
+    ref.current.children.forEach((child, i) => {
+      const phase = (clock.elapsedTime * speed + i / 14) % 1;
+      const angle = i * 2.17 + phase * 0.95;
+      const radius = 0.52 + (i % 4) * 0.16 + phase * 0.16;
+      child.position.set(
+        Math.sin(angle) * radius,
+        -0.62 + phase * 3.15,
+        Math.cos(angle) * 0.42 - 0.16,
+      );
+      child.rotation.z = angle + phase * 2.2;
+      child.rotation.x = 0.18 + phase * 0.7;
+      const scale = Math.sin(Math.PI * phase) * (i % 3 === 0 ? 1.12 : 0.9);
+      child.scale.setScalar(Math.max(0.06, scale));
+      child.children.forEach((part) => {
+        if (part.material) {
+          part.material.opacity = Math.sin(Math.PI * phase) * 0.88;
+        }
+      });
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {Array.from({ length: 14 }, (_, i) => (
+        <group key={i}>
+          {i % 3 === 0 ? (
+            <Petal
+              scale={[0.11, 0.18, 0.12]}
+              color={i % 2 ? "#f1a9bd" : "#ffd8df"}
+            />
+          ) : (
+            <mesh rotation={[0, 0, Math.PI / 4]}>
+              <octahedronGeometry args={[0.045 + (i % 2) * 0.018, 0]} />
+              <meshBasicMaterial
+                color={i % 2 ? "#f0b5c5" : "#d6aa72"}
+                transparent
+                opacity={0.8}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          )}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function SleepEffect({ motion }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    const speed = motion ? 0.055 : 0.012;
+    ref.current.children.forEach((child, i) => {
+      const phase = (clock.elapsedTime * speed + i / 9) % 1;
+      const angle = i * 1.83 + phase * 0.7;
+      child.position.set(
+        Math.sin(angle) * (0.62 + (i % 3) * 0.18),
+        1.65 - phase * 2.15,
+        Math.cos(angle) * 0.44 - 0.12,
+      );
+      const twinkle = 0.4 + 0.6 * Math.sin(Math.PI * phase);
+      child.scale.setScalar(0.72 + twinkle * 0.35);
+      child.material.opacity = 0.08 + twinkle * 0.22;
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[0.028 + (i % 3) * 0.008, 10, 8]} />
+          <meshBasicMaterial
+            color={i % 2 ? "#d6c592" : "#9db39b"}
+            transparent
+            opacity={0.2}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function StateEffects({ state, motion }) {
+  if (state === "thinking") return <ThinkingEffect motion={motion} />;
+  if (state === "listening") return <ListeningEffect motion={motion} />;
+  if (state === "working") return <WorkingEffect motion={motion} />;
+  if (state === "success") return <SuccessEffect motion={motion} />;
+  if (state === "sleep") return <SleepEffect motion={motion} />;
+  return <IdleMotes motion={motion} />;
+}
+
 export default function SenModel({
   state = "idle",
   energy = 72,
@@ -882,46 +1153,9 @@ export default function SenModel({
           motion={motion}
           bloom={bloom}
         />
-        {state === "working" &&
-          [-1, 1].map((side) => (
-            <group
-              key={side}
-              position={[side * 0.91, -0.28, 0.6]}
-              rotation={[0, side * -0.35, side * 0.06]}
-            >
-              <mesh>
-                <planeGeometry args={[0.4, 0.3]} />
-                <meshBasicMaterial
-                  color={JADE}
-                  transparent
-                  opacity={0.15}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-              {[0, 1, 2].map((i) => (
-                <Line
-                  key={i}
-                  points={[
-                    [-0.13, 0.07 - i * 0.07, 0.005],
-                    [0.06 + i * 0.025, 0.07 - i * 0.07, 0.005],
-                  ]}
-                  color={JADE}
-                  lineWidth={1.5}
-                />
-              ))}
-            </group>
-          ))}
-        {state === "success" &&
-          Array.from({ length: 7 }, (_, i) => (
-            <Petal
-              key={i}
-              position={[Math.sin(i * 2.4) * 1.1, 0.3 + i * 0.2, -0.5]}
-              rotation={[0.3, 0, i * 1.3]}
-              scale={[0.13, 0.2, 0.15]}
-              color={PINK}
-            />
-          ))}
+
       </group>
+      <StateEffects state={state} motion={motion} />
       {LOTUS_LAYERS.flatMap((layer, layerIndex) =>
         Array.from({ length: layer.count }, (_, index) => (
           <LotusBloomPetal
