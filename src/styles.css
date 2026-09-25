@@ -4026,3 +4026,249 @@ em {
     max-height: 62vh;
   }
 }
+
+
+/* Six emotion system ------------------------------------------------------- */
+.state-idle {
+  --state-accent: #c97f98;
+  --state-secondary: #8ea88f;
+  --state-soft: #f1dce3;
+  --state-glow: #d99aad38;
+}
+
+.state-thinking {
+  --state-accent: #9c82d9;
+  --state-secondary: #d2aa5e;
+  --state-soft: #e7def7;
+  --state-glow: #ad94e24d;
+}
+
+.state-listening {
+  --state-accent: #5faea5;
+  --state-secondary: #91d0c7;
+  --state-soft: #d9efeb;
+  --state-glow: #77c5bb45;
+}
+
+.state-working {
+  --state-accent: #759966;
+  --state-secondary: #c89d48;
+  --state-soft: #e0ead9;
+  --state-glow: #8fb37d40;
+}
+
+.state-success {
+  --state-accent: #d69f3e;
+  --state-secondary: #db7f9d;
+  --state-soft: #f7e7c6;
+  --state-glow: #e4b45b55;
+}
+
+.state-sleep {
+  --state-accent: #7f9bce;
+  --state-secondary: #a584c3;
+  --state-soft: #dde4f4;
+  --state-glow: #8ea9dc42;
+}
+
+.state-btn.active {
+  color: var(--state-accent);
+  background: var(--state-soft);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--state-accent) 28%, transparent),
+    0 8px 24px color-mix(in srgb, var(--state-accent) 10%, transparent);
+}
+
+.state-btn.active .state-glyph {
+  color: var(--state-accent);
+  background: #fffaf8d9;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--state-accent) 24%, transparent);
+}
+
+.garden-moon {
+  filter: drop-shadow(0 0 28px var(--state-glow));
+}
+
+.scene-caption {
+  color: color-mix(in srgb, var(--state-accent) 72%, #74655f);
+}
+
+.scene-caption .caption-line {
+  background: color-mix(in srgb, var(--state-accent) 38%, #d8ccc4);
+}
+
+.moment-card {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 8px 2px 20px;
+  border-bottom: 1px solid #e8dfd7;
+}
+
+.moment-card > small {
+  font-size: 6px;
+  letter-spacing: 1.45px;
+  color: #a19186;
+}
+
+.moment-symbol {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  margin: 8px 0 2px;
+  border-radius: 50%;
+  background: var(--state-soft);
+  color: var(--state-accent);
+  font: normal 24px/1 Georgia, serif;
+  box-shadow: 0 10px 30px var(--state-glow);
+}
+
+.moment-card > strong {
+  font: normal 19px/1.15 Georgia, serif;
+  color: #6e5b58;
+}
+
+.moment-card > p {
+  margin: 0;
+  max-width: 160px;
+  color: #8d7d73;
+  font: italic 9px/1.65 Georgia, serif;
+}
+
+.moment-palette {
+  display: flex;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.moment-palette i {
+  width: 15px;
+  height: 4px;
+  border-radius: 999px;
+}
+
+.moment-palette i:nth-child(1) {
+  width: 28px;
+  background: var(--state-accent);
+}
+
+.moment-palette i:nth-child(2) {
+  background: var(--state-secondary);
+}
+
+.moment-palette i:nth-child(3) {
+  background: var(--state-soft);
+  box-shadow: inset 0 0 0 1px #0000000b;
+}
+
+.detail-panel .rest-toggle {
+  margin-top: 16px;
+}
+
+.time-night .moment-card {
+  border-bottom-color: #8b7e8e66;
+}
+
+.time-night .moment-card > small,
+.time-night .moment-card > p {
+  color: #c5b8c7;
+}
+
+.time-night .moment-card > strong {
+  color: #f2e9f1;
+}
+
+.time-night .moment-symbol {
+  background: color-mix(in srgb, var(--state-accent) 22%, #2a2332);
+  color: color-mix(in srgb, var(--state-accent) 62%, #ffffff);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--state-accent) 30%, transparent);
+}
+
+/* Presence palettes: each time of day should read instantly. */
+.app-shell.time-dawn:not(.time-night) {
+  background:
+    radial-gradient(ellipse at 50% 33%, #f4b59e69, transparent 43%),
+    radial-gradient(circle at 16% 75%, #e8a9b326, transparent 32%),
+    linear-gradient(180deg, #f8e0d4 0%, #f8eee7 56%, #f6f2ec 100%);
+}
+
+.time-dawn .garden {
+  background:
+    radial-gradient(circle at 50% 42%, #ffd9c598, transparent 43%),
+    linear-gradient(180deg, #fff3ebc7, #f8e8e16b);
+  border-color: #e2b9aa85;
+}
+
+.time-dawn .garden-moon {
+  box-shadow:
+    0 0 72px #f2a98942,
+    inset 0 0 48px #fff6ef66;
+}
+
+.app-shell.time-day:not(.time-night) {
+  background:
+    radial-gradient(ellipse at 50% 32%, #fff3d982, transparent 45%),
+    radial-gradient(circle at 84% 70%, #b9ccb21f, transparent 30%),
+    linear-gradient(180deg, #fbf7ee 0%, #f7f5ef 100%);
+}
+
+.time-day .garden {
+  background:
+    radial-gradient(circle at 50% 42%, #fff9e7ba, transparent 43%),
+    linear-gradient(180deg, #fffdf7cc, #f4f2e983);
+  border-color: #ded7c58f;
+}
+
+.time-day .garden-moon {
+  box-shadow:
+    0 0 64px #efd8a83b,
+    inset 0 0 48px #ffffff75;
+}
+
+.app-shell.time-dusk:not(.time-night) {
+  background:
+    radial-gradient(ellipse at 50% 32%, #d9826a66, transparent 44%),
+    radial-gradient(circle at 17% 75%, #c5807d27, transparent 34%),
+    linear-gradient(180deg, #e9b8a8 0%, #ead0c6 52%, #f3e8e1 100%);
+}
+
+.time-dusk .garden {
+  background:
+    radial-gradient(circle at 50% 42%, #efad9587, transparent 43%),
+    linear-gradient(180deg, #e8b3a69f, #e7c9c18a);
+  border-color: #c98e7e80;
+}
+
+.time-dusk .garden-moon {
+  box-shadow:
+    0 0 86px #d77c654e,
+    inset 0 0 56px #ffd8cb43;
+}
+
+/* Night keeps its established palette; emotion only adds a small accent. */
+.time-night .garden-moon {
+  filter:
+    drop-shadow(0 0 28px var(--state-glow))
+    drop-shadow(0 0 16px #9d83d74a);
+}
+
+.time-night .state-btn.active {
+  background: color-mix(in srgb, var(--state-accent) 18%, #352c3d);
+  color: color-mix(in srgb, var(--state-accent) 55%, #ffffff);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--state-accent) 28%, transparent),
+    0 8px 24px #08060d24;
+}
+
+@media (min-width: 981px) {
+  .workspace {
+    grid-template-columns: 176px minmax(560px, 1fr) 148px;
+  }
+}
+
+@media (min-width: 1500px) {
+  .workspace {
+    grid-template-columns: 190px minmax(650px, 1fr) 160px;
+  }
+}
