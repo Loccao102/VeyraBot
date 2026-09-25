@@ -2089,6 +2089,7 @@ export default function SenModel({
       state === "sleep"
         ? 0.12 + (Math.sin(t * 1.05) + 1) * 0.035 * motion
         : 0.22 + 0.78 * bloom.current + wakeFlash * 0.55;
+    const nightBoost = presencePhase === "night" ? 1.28 : 1;
     const coreHovered = hoveredTarget === "core";
     const coreHeld = heldTarget === "core";
     const coreRelease =
@@ -2101,10 +2102,11 @@ export default function SenModel({
 
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
-      (state === "sleep" ? 0.18 : cfg.glow) *
+      ((state === "sleep" ? 0.18 : cfg.glow) *
         (0.06 + coreControl * 1.12) *
         sleepingPulse +
-        coreInteractionGlow,
+        coreInteractionGlow) *
+        nightBoost,
       coreHeld ? 8 : 4,
       delta,
     );
@@ -2113,8 +2115,8 @@ export default function SenModel({
       (state === "sleep"
         ? 0.22 + Math.sin(t * 1.05) * 0.035 * motion
         : 0.32 + bloom.current * 0.52 + wakeFlash * 0.72) *
-        (0.04 + coreControl * 1.18) +
-        coreInteractionGlow * 0.72,
+        (0.04 + coreControl * 1.18) * nightBoost +
+        coreInteractionGlow * 0.72 * nightBoost,
       coreHeld ? 8 : 4,
       delta,
     );
@@ -2151,8 +2153,9 @@ export default function SenModel({
       coreAura.current.scale.setScalar(auraScale);
       coreAura.current.material.opacity = damp(
         coreAura.current.material.opacity,
-        (0.015 + warmth * 0.24) * bloom.current +
-          coreInteractionGlow * 0.04,
+        ((0.015 + warmth * 0.24) * bloom.current +
+          coreInteractionGlow * 0.04) *
+          (presencePhase === "night" ? 1.38 : 1),
         6,
         delta,
       );
