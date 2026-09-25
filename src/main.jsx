@@ -3,12 +3,13 @@ import { createRoot } from "react-dom/client";
 import { Canvas } from "@react-three/fiber";
 import {
   ContactShadows,
-  Environment,
-  Lightformer,
   OrbitControls,
   Html,
 } from "@react-three/drei";
 import SenModel from "./SenModel";
+import EnvironmentEffects, {
+  getPresencePhase,
+} from "./EnvironmentEffects";
 import useVeyraAgent from "./useVeyraAgent";
 import "./styles.css";
 
@@ -67,6 +68,22 @@ function useReducedMotion() {
   return reduced;
 }
 
+function usePresenceClock() {
+  const [phase, setPhase] = useState(() => getPresencePhase(new Date()));
+
+  useEffect(() => {
+    const update = () => setPhase(getPresencePhase(new Date()));
+    const timer = window.setInterval(update, 60_000);
+    window.addEventListener("focus", update);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", update);
+    };
+  }, []);
+
+  return phase;
+}
+
 class SceneBoundary extends Component {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -84,16 +101,23 @@ class SceneBoundary extends Component {
   }
 }
 
-function Scene({ state, energy, halo, core, hover, reducedMotion, resetKey }) {
+function Scene({
+  state,
+  energy,
+  halo,
+  core,
+  hover,
+  reducedMotion,
+  resetKey,
+  presence,
+}) {
   return (
     <>
-      <ambientLight
-        intensity={state === "sleep" ? 0.65 : 0.9}
-        color="#fff0e4"
+      <EnvironmentEffects
+        phase={presence}
+        reducedMotion={reducedMotion}
+        sleeping={state === "sleep"}
       />
-      <directionalLight position={[3, 5, 5]} intensity={2} color="#fff3df" />
-      <directionalLight position={[-4, 2, 1]} intensity={1.6} color="#ffd2de" />
-      <directionalLight position={[0, 2, -4]} intensity={2.4} color="#fff9ed" />
       <Suspense
         fallback={
           <Html center>
@@ -108,29 +132,8 @@ function Scene({ state, energy, halo, core, hover, reducedMotion, resetKey }) {
           coreControl={core}
           hoverControl={hover}
           reducedMotion={reducedMotion}
+          presencePhase={presence.key}
         />
-        <Environment resolution={64}>
-          <Lightformer
-            position={[0, 5, -3]}
-            scale={[8, 8, 1]}
-            intensity={2}
-            color="#fff2e2"
-          />
-          <Lightformer
-            position={[-4, 1, 3]}
-            rotation={[0, Math.PI / 3, 0]}
-            scale={[4, 7, 1]}
-            intensity={3}
-            color="#ffe5e9"
-          />
-          <Lightformer
-            position={[4, 2, 2]}
-            rotation={[0, -Math.PI / 3, 0]}
-            scale={[3, 6, 1]}
-            intensity={2}
-            color="#ffffff"
-          />
-        </Environment>
       </Suspense>
       <ContactShadows
         position={[0, -1.16, 0]}
@@ -163,6 +166,7 @@ function App() {
   const [energy, setEnergy] = useState(72);
   const [blooming, setBlooming] = useState(false);
   const reducedMotion = useReducedMotion();
+  const presence = usePresenceClock();
   const {
     state,
     setState,
@@ -201,7 +205,7 @@ function App() {
     setBlooming(true);
   };
   return (
-    <main className={`app-shell state-${state}`}>
+    <main className={`app-shell state-${state} time-${presence.key}`}>
       <header className="topbar">
         <a className="brand" href="./" aria-label="Sen home">
           <LotusMark />
@@ -262,7 +266,7 @@ function App() {
           <div className="scene-topline">
             <span>THE LOTUS GARDEN</span>
             <span>✧</span>
-            <span>EST. 2026</span>
+            <span className="presence-label">{presence.label}</span>
           </div>
           <div className="canvas-wrap">
             <SceneBoundary>
@@ -286,6 +290,7 @@ function App() {
                   hover={hover}
                   reducedMotion={reducedMotion}
                   resetKey={resetKey}
+                  presence={presence}
                 />
               </Canvas>
             </SceneBoundary>
@@ -510,7 +515,7 @@ function App() {
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>CHARACTER STUDY · v0.5</span>
+        <span>P1 · PRESENCE · v0.6</span>
       </footer>
     </main>
   );
