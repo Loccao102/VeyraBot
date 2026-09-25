@@ -1633,6 +1633,7 @@ em {
 .focus-mode .scene-tools,
 .focus-mode .presence-lab,
 .focus-mode .ritual-panel,
+.focus-mode .personal-panel,
 .focus-mode .thought-card {
   opacity: 0;
   pointer-events: none;
@@ -2512,6 +2513,227 @@ em {
   .focus-mode .garden-ring {
     width: min(62vh, 86vw);
     top: 53%;
+  }
+}
+
+/* P3 · Personal ------------------------------------------------------------ */
+.personal-panel {
+  position: absolute;
+  z-index: 15;
+  right: 12px;
+  bottom: 44px;
+  width: min(300px, calc(100% - 24px));
+  padding: 14px;
+  border: 1px solid #dbc9c0a6;
+  border-radius: 18px;
+  background: #fffaf4e8;
+  box-shadow: 0 18px 48px #6a4e4215;
+  backdrop-filter: blur(18px);
+}
+
+.personal-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0 2px 11px;
+  border-bottom: 1px solid #eadfd7;
+}
+
+.personal-panel-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.personal-panel-head small,
+.personal-unlocks small,
+.personal-dna small,
+.personal-stats small {
+  font-size: 6px;
+  letter-spacing: 1.1px;
+  color: #a2837b;
+}
+
+.personal-panel-head strong {
+  font: normal 17px/1.2 Georgia, serif;
+  color: #705a58;
+}
+
+.personal-panel-head span {
+  font-size: 7px;
+  letter-spacing: 0.45px;
+  color: #968278;
+}
+
+.personal-panel-head > button {
+  margin-left: auto;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  color: #987b70;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.personal-progress {
+  display: grid;
+  gap: 7px;
+  padding: 12px 2px;
+}
+
+.personal-progress > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 7px;
+  color: #948077;
+}
+
+.personal-progress > span b {
+  font-size: 8px;
+  font-weight: 600;
+  color: #925f6e;
+}
+
+.personal-progress > i {
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfd3cc;
+}
+
+.personal-progress > i > b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #cb8fa1, #c7a871);
+  transition: width 0.5s ease;
+}
+
+.personal-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid #eee3dc;
+  border-bottom: 1px solid #eee3dc;
+}
+
+.personal-stats > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 8px 10px 2px;
+}
+
+.personal-stats > div:nth-child(even) {
+  padding-left: 10px;
+  border-left: 1px solid #eee3dc;
+}
+
+.personal-stats > div:nth-child(n + 3) {
+  border-top: 1px solid #eee3dc;
+}
+
+.personal-stats strong {
+  font: normal 13px Georgia, serif;
+  color: #745f5b;
+}
+
+.personal-dna {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 2px;
+  border-bottom: 1px solid #eee3dc;
+}
+
+.personal-dna > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.personal-dna span {
+  max-width: 170px;
+  font-size: 7px;
+  line-height: 1.5;
+  color: #9a877c;
+}
+
+.personal-swatches {
+  display: grid;
+  grid-template-columns: repeat(2, 13px);
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.personal-swatches i {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #fff8;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #cdbcb3;
+}
+
+.personal-unlocks {
+  display: grid;
+  gap: 5px;
+  padding: 11px 2px 1px;
+}
+
+.personal-unlocks p {
+  margin: 0;
+  font: italic 10px/1.5 Georgia, serif;
+  color: #7d6961;
+}
+
+.garden-level-4 .garden-moon,
+.garden-level-5 .garden-moon {
+  box-shadow:
+    0 0 72px #ddb5bf32,
+    inset 0 0 48px #c7a87d12;
+}
+
+.garden-level-5 .garden-ring {
+  border-color: #c6a8845c;
+}
+
+.time-night .personal-panel {
+  border-color: #a99ba69c;
+  background: #675e6bdc;
+  color: #f1e7ed;
+}
+
+.time-night .personal-panel-head,
+.time-night .personal-stats,
+.time-night .personal-stats > div:nth-child(even),
+.time-night .personal-stats > div:nth-child(n + 3),
+.time-night .personal-dna {
+  border-color: #857987;
+}
+
+.time-night .personal-panel-head strong,
+.time-night .personal-stats strong,
+.time-night .personal-unlocks p {
+  color: #f0e4eb;
+}
+
+.time-night .personal-panel-head span,
+.time-night .personal-dna span,
+.time-night .personal-progress > span {
+  color: #d7c9d2;
+}
+
+.time-night .personal-panel small {
+  color: #cbb8c5;
+}
+
+@media (max-width: 680px) {
+  .personal-panel {
+    left: 8px;
+    right: 8px;
+    bottom: 42px;
+    width: auto;
+    padding: 12px;
+    border-radius: 15px;
   }
 }
 

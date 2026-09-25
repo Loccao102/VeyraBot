@@ -160,6 +160,7 @@ function surfaceGeometry(point, rows = 24, columns = 14) {
 
 function Petal({
   color = PEARL,
+  accent = GOLD,
   bend = 0.25,
   ornament = false,
   leaf = false,
@@ -202,7 +203,7 @@ function Petal({
       </mesh>
       <Line
         points={outline}
-        color={GOLD}
+        color={accent}
         lineWidth={0.85}
         transparent
         opacity={0.8}
@@ -210,7 +211,7 @@ function Petal({
       {(ornament || leaf) && (
         <Line
           points={vein}
-          color={leaf ? "#b6bd8b" : GOLD}
+          color={leaf ? "#b6bd8b" : accent}
           lineWidth={0.7}
           transparent
           opacity={0.7}
@@ -232,7 +233,7 @@ function Petal({
               p.z += 0.01;
               return p;
             })}
-            color={GOLD}
+            color={accent}
             lineWidth={0.8}
             transparent
             opacity={0.7}
@@ -242,7 +243,7 @@ function Petal({
   );
 }
 
-function CrownPetal({ side, index, state, motion, bloom }) {
+function CrownPetal({ side, index, state, motion, bloom, palette }) {
   const ref = useRef();
   const cfg = SEN_STATES[state];
   useFrame(({ clock }, delta) => {
@@ -267,7 +268,12 @@ function CrownPetal({ side, index, state, motion, bloom }) {
     >
       <Petal
         scale={[0.96 - index * 0.1, 1.32 - index * 0.06, 1]}
-        color={index === 1 ? PINK : PEARL}
+        color={
+          index === 1
+            ? palette?.petalPrimary ?? PINK
+            : palette?.petalSoft ?? PEARL
+        }
+        accent={palette?.gold ?? GOLD}
         bend={index === 0 ? -0.16 : 0.16}
         ornament={index < 2}
       />
@@ -770,6 +776,163 @@ function TouchRipples({ ripples = [], reducedMotion }) {
           reducedMotion={reducedMotion}
         />
       ))}
+    </group>
+  );
+}
+
+function GardenFireflies({ color, reducedMotion }) {
+  const ref = useRef();
+  const points = useMemo(
+    () =>
+      Array.from({ length: 9 }, (_, i) => ({
+        angle: i * 2.17,
+        radius: 1.12 + (i % 4) * 0.18,
+        height: -0.72 + (i % 5) * 0.26,
+        phase: i * 0.91,
+      })),
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    const speed = reducedMotion ? 0.12 : 1;
+    ref.current?.children.forEach((mesh, i) => {
+      const point = points[i];
+      const time = clock.elapsedTime * speed;
+      mesh.position.x =
+        Math.sin(point.angle + time * 0.18) * point.radius +
+        Math.sin(time * 0.43 + point.phase) * 0.08;
+      mesh.position.z =
+        Math.cos(point.angle + time * 0.18) * point.radius * 0.48;
+      mesh.position.y =
+        point.height + Math.sin(time * 0.62 + point.phase) * 0.08;
+      mesh.material.opacity =
+        0.28 + (Math.sin(time * 1.8 + point.phase) + 1) * 0.18;
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {points.map((point, i) => (
+        <mesh
+          key={i}
+          position={[
+            Math.sin(point.angle) * point.radius,
+            point.height,
+            Math.cos(point.angle) * point.radius * 0.48,
+          ]}
+        >
+          <sphereGeometry args={[0.018 + (i % 3) * 0.004, 8, 6]} />
+          <meshBasicMaterial
+            color={i % 3 === 0 ? "#d9c47a" : color}
+            transparent
+            opacity={0.35}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function PersonalGardenGrowth({ personal, reducedMotion }) {
+  const level = personal?.level ?? 1;
+  const dna = personal?.dna ?? {};
+  const leafColor = dna.leaf ?? JADE;
+  const goldColor = dna.gold ?? GOLD;
+  const coreColor = dna.coreGlow ?? "#ec96a7";
+
+  const leaves = [
+    [-1.26, -1.097, 0.48, -0.24, 1.08],
+    [1.28, -1.098, 0.37, 0.2, 0.92],
+    [-1.48, -1.099, -0.18, 0.12, 0.78],
+    [1.5, -1.099, -0.28, -0.16, 0.72],
+  ];
+  const stones = [
+    [-1.58, -1.02, 0.08, 0.14],
+    [1.64, -1.03, 0.04, 0.11],
+    [1.34, -1.04, -0.55, 0.09],
+  ];
+
+  return (
+    <group>
+      {level >= 2 &&
+        leaves.slice(0, Math.min(leaves.length, level)).map(
+          ([x, y, z, rotation, scale], index) => (
+            <group key={`leaf-${index}`} position={[x, y, z]} rotation={[0, rotation, 0]}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} scale={[scale, scale * 0.58, 1]}>
+                <circleGeometry args={[0.2, 40]} />
+                <meshPhysicalMaterial
+                  color={leafColor}
+                  roughness={0.56}
+                  metalness={0.04}
+                  clearcoat={0.2}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+              <mesh
+                position={[0, 0.004, 0]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                scale={[scale, scale * 0.58, 1]}
+              >
+                <ringGeometry args={[0.18, 0.192, 40]} />
+                <meshBasicMaterial
+                  color={goldColor}
+                  transparent
+                  opacity={0.3}
+                  depthWrite={false}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+            </group>
+          ),
+        )}
+
+      {level >= 3 &&
+        stones.map(([x, y, z, size], index) => (
+          <mesh
+            key={`stone-${index}`}
+            position={[x, y, z]}
+            rotation={[0.2, index * 0.7, 0.08]}
+            scale={[size * 1.35, size * 0.62, size]}
+          >
+            <dodecahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial
+              color={index % 2 ? "#b8aaa2" : "#c8bbb0"}
+              roughness={0.82}
+            />
+          </mesh>
+        ))}
+
+      {level >= 4 && (
+        <GardenFireflies color={coreColor} reducedMotion={reducedMotion} />
+      )}
+
+      {level >= 5 && (
+        <group position={[1.43, -0.84, -0.63]}>
+          <mesh rotation={[0, Math.PI / 4, 0]}>
+            <octahedronGeometry args={[0.115, 0]} />
+            <meshPhysicalMaterial
+              color={dna.petalSoft ?? PEARL}
+              emissive={coreColor}
+              emissiveIntensity={0.72}
+              roughness={0.24}
+              clearcoat={0.9}
+            />
+          </mesh>
+          <mesh position={[0, -0.13, 0]} scale={[0.11, 0.05, 0.11]}>
+            <cylinderGeometry args={[1, 1.18, 1, 8]} />
+            <meshStandardMaterial color={goldColor} roughness={0.45} />
+          </mesh>
+          <pointLight
+            position={[0, 0.02, 0]}
+            color={coreColor}
+            intensity={0.42}
+            distance={1.8}
+            decay={2}
+          />
+        </group>
+      )}
     </group>
   );
 }
@@ -1324,6 +1487,7 @@ export default function SenModel({
   interactionEnabled = true,
   ritual = null,
   focusActive = false,
+  personal = null,
 }) {
   const root = useRef(),
     awake = useRef(),
@@ -1342,6 +1506,14 @@ export default function SenModel({
   };
   const hoveredTarget = interaction?.hoveredTarget ?? null;
   const heldTarget = interaction?.heldTarget ?? null;
+  const personalPalette = personal?.dna ?? {
+    petalPrimary: PINK,
+    petalSoft: PEARL,
+    leaf: JADE,
+    core: "#f6b6c2",
+    coreGlow: "#ec96a7",
+    gold: GOLD,
+  };
   const characterInteractionEnabled =
     interactionEnabled && state !== "sleep" && energy > 28;
 
@@ -1623,7 +1795,7 @@ export default function SenModel({
       <pointLight
         ref={budLight}
         position={[0, -0.12, 0.08]}
-        color="#f2a0b5"
+        color={personalPalette.coreGlow}
         intensity={0.3}
         distance={3.1}
         decay={2}
@@ -1633,6 +1805,8 @@ export default function SenModel({
           <Petal
             position={[0, 0.3, -0.31]}
             scale={[1.1, 1.54, 0.9]}
+            color={personalPalette.petalSoft}
+            accent={personalPalette.gold}
             bend={-0.22}
             ornament
           />
@@ -1645,6 +1819,7 @@ export default function SenModel({
                 state={state}
                 motion={motion}
                 bloom={bloom}
+                palette={personalPalette}
               />
             )),
           )}
@@ -1690,7 +1865,8 @@ export default function SenModel({
               position={[0, 0.29, 0.3]}
               rotation={[0.05, side * -0.2, -side * 1.38]}
               scale={[0.42, 0.72, 0.35]}
-              color={PINK}
+              color={personalPalette.petalPrimary}
+              accent={personalPalette.gold}
               ornament
             />
           ))}
@@ -1708,28 +1884,32 @@ export default function SenModel({
               position={[0, -0.85, 0.03]}
               rotation={[0, side * 0.15, -side * 0.32]}
               scale={[0.78, 0.93, 0.65]}
-              color={PINK}
+              color={personalPalette.petalPrimary}
+              accent={personalPalette.gold}
               ornament
             />
             <Petal
               position={[side * 0.49, -0.11, 0.06]}
               rotation={[0.18, side * 0.25, -side * 2.52]}
               scale={[0.6, 0.82, 0.8]}
-              color={PINK}
+              color={personalPalette.petalPrimary}
+              accent={personalPalette.gold}
               ornament
             />
             <Petal
               position={[side * 0.5, -0.18, -0.035]}
               rotation={[0.15, side * 0.25, -side * 2.4]}
               scale={[0.58, 0.86, 0.6]}
-              color={JADE}
+              color={personalPalette.leaf}
+              accent={personalPalette.gold}
               leaf
             />
             <Petal
               position={[0, 0.14, 0.07]}
               rotation={[0.25, 0, -side * 1.16]}
               scale={[0.36, 0.62, 0.5]}
-              color={JADE}
+              color={personalPalette.leaf}
+              accent={personalPalette.gold}
               leaf
             />
             {characterInteractionEnabled && (
@@ -1790,8 +1970,8 @@ export default function SenModel({
         >
           <octahedronGeometry args={[1, 0]} />
           <meshPhysicalMaterial
-            color="#f6b6c2"
-            emissive="#ec96a7"
+            color={personalPalette.core}
+            emissive={personalPalette.coreGlow}
             emissiveIntensity={0.45}
             metalness={0.15}
             roughness={0.15}
@@ -1806,7 +1986,7 @@ export default function SenModel({
             [-0.23, -0.09, 0.31],
             [0, 0.22, 0.31],
           ]}
-          color={GOLD}
+          color={personalPalette.gold}
           lineWidth={1.3}
         />
         <FloatingPetals
@@ -1841,7 +2021,8 @@ export default function SenModel({
           <Petal
             rotation={[1.32, 0, 0]}
             scale={[0.64, 0.91, 0.4]}
-            color={JADE}
+            color={personalPalette.leaf}
+            accent={personalPalette.gold}
             leaf
           />
         </group>
@@ -1850,6 +2031,10 @@ export default function SenModel({
       <Ripples state={state} motion={motion} bloom={bloom} />
       <TouchRipples
         ripples={interaction?.ripples ?? []}
+        reducedMotion={reducedMotion}
+      />
+      <PersonalGardenGrowth
+        personal={personal}
         reducedMotion={reducedMotion}
       />
       <ThoughtGarden
