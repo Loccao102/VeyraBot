@@ -1,6 +1,6 @@
 import React, { Component, Suspense, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import {
   ContactShadows,
   OrbitControls,
@@ -305,21 +305,6 @@ class SceneBoundary extends Component {
   }
 }
 
-function FocusCamera({ active, reducedMotion }) {
-  useFrame(({ camera }, delta) => {
-    if (!active) return;
-
-    const speed = reducedMotion ? 14 : 5.5;
-    const alpha = 1 - Math.exp(-delta * speed);
-    camera.position.x += (0 - camera.position.x) * alpha;
-    camera.position.y += (0.5 - camera.position.y) * alpha;
-    camera.position.z += (5.75 - camera.position.z) * alpha;
-    camera.lookAt(0, 0.02, 0);
-  });
-
-  return null;
-}
-
 function Scene({
   state,
   energy,
@@ -344,7 +329,6 @@ function Scene({
         reducedMotion={reducedMotion}
         sleeping={state === "sleep"}
       />
-      <FocusCamera active={focusActive} reducedMotion={reducedMotion} />
       <Suspense
         fallback={
           <Html center>
@@ -376,17 +360,18 @@ function Scene({
         color="#765747"
         resolution={256}
       />
-      <OrbitControls
-        key={resetKey}
-        makeDefault
-        target={[0, 0.24, 0]}
-        enablePan={false}
-        enableZoom={false}
-        minPolarAngle={Math.PI / 3}
-        maxPolarAngle={Math.PI / 1.85}
-        dampingFactor={0.06}
-        enabled={!focusActive}
-      />
+      {!focusActive && (
+        <OrbitControls
+          key={resetKey}
+          makeDefault
+          target={[0, 0.24, 0]}
+          enablePan={false}
+          enableZoom={false}
+          minPolarAngle={Math.PI / 3}
+          maxPolarAngle={Math.PI / 1.85}
+          dampingFactor={0.06}
+        />
+      )}
     </>
   );
 }
@@ -586,8 +571,12 @@ function App() {
           <div className="canvas-wrap">
             <SceneBoundary>
               <Canvas
-                key={resetKey}
-                camera={{ position: [0, 0.75, 6.4], fov: 38 }}
+                key={`${resetKey}-${ritual.focus.active ? "focus" : "garden"}`}
+                camera={
+                  ritual.focus.active
+                    ? { position: [0, 0.68, 6.85], fov: 36 }
+                    : { position: [0, 0.75, 6.4], fov: 38 }
+                }
                 gl={{
                   antialias: true,
                   alpha: true,
