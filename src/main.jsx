@@ -10,7 +10,9 @@ import SenModel from "./SenModel";
 import EnvironmentEffects from "./EnvironmentEffects";
 import usePresence from "./usePresence";
 import useInteractionManager from "./useInteractionManager";
+import useRitualGarden from "./useRitualGarden";
 import useVeyraAgent from "./useVeyraAgent";
+import { captureSenMoment } from "./captureMoment";
 import "./styles.css";
 
 const STATES = [
@@ -161,6 +163,131 @@ function PresenceLab({ presence, onClose }) {
   );
 }
 
+function formatFocusTime(milliseconds) {
+  const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(seconds / 60);
+  return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(
+    2,
+    "0",
+  )}`;
+}
+
+function RitualPanel({
+  ritual,
+  onClose,
+  onAddThought,
+  onStartFocus,
+  onCapture,
+  captureStatus,
+  disabled,
+}) {
+  const [thought, setThought] = useState("");
+
+  const submitThought = (event) => {
+    event.preventDefault();
+    if (!thought.trim()) return;
+    onAddThought(thought);
+    setThought("");
+  };
+
+  return (
+    <div className="ritual-panel" role="dialog" aria-label="Sen rituals">
+      <div className="ritual-panel-head">
+        <div>
+          <small>P2 · QUIET RITUALS</small>
+          <strong>Stay a little longer.</strong>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close rituals">
+          ×
+        </button>
+      </div>
+
+      <form className="thought-form" onSubmit={submitThought}>
+        <label htmlFor="sen-thought">Leave something with Sen</label>
+        <textarea
+          id="sen-thought"
+          maxLength={160}
+          rows={3}
+          value={thought}
+          disabled={disabled}
+          onChange={(event) => setThought(event.target.value)}
+          placeholder="A thought, a feeling, or something you want to leave here…"
+        />
+        <div>
+          <span>{ritual.thoughtCount}/24 resting in the pond</span>
+          <button type="submit" disabled={disabled || !thought.trim()}>
+            Place in the pond ↘
+          </button>
+        </div>
+      </form>
+
+      <div className="ritual-divider" />
+
+      <div className="focus-ritual">
+        <div>
+          <span>Stay with Sen</span>
+          <small>Let the rest of the page fall away for a while.</small>
+        </div>
+        <div className="focus-options">
+          {[1, 25, 45].map((minutes) => (
+            <button
+              key={minutes}
+              type="button"
+              disabled={disabled}
+              onClick={() => onStartFocus(minutes)}
+            >
+              {minutes === 1 ? "1m preview" : `${minutes}m`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="ritual-divider" />
+
+      <button
+        type="button"
+        className="capture-moment-button"
+        onClick={onCapture}
+        disabled={disabled || captureStatus === "working"}
+      >
+        <span>Capture this moment</span>
+        <b>
+          {captureStatus === "working"
+            ? "Preparing…"
+            : captureStatus === "done"
+              ? "Moment saved ✧"
+              : captureStatus === "error"
+                ? "Try again"
+                : "PNG ↗"}
+        </b>
+      </button>
+    </div>
+  );
+}
+
+function FocusHUD({ focus, onTogglePause, onExit }) {
+  return (
+    <div className="focus-hud" aria-live="polite">
+      <div className="focus-hud-brand">
+        <LotusMark />
+        <span>STAY WITH SEN</span>
+      </div>
+      <div className="focus-clock">
+        <strong>{formatFocusTime(focus.remainingMs)}</strong>
+        <span>{focus.paused ? "A quiet pause." : "Nothing else needs you right now."}</span>
+      </div>
+      <div className="focus-actions">
+        <button type="button" onClick={onTogglePause}>
+          {focus.paused ? "Continue" : "Pause"}
+        </button>
+        <button type="button" onClick={onExit}>
+          Leave focus
+        </button>
+      </div>
+    </div>
+  );
+}
+
 class SceneBoundary extends Component {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -191,6 +318,8 @@ function Scene({
   mood,
   interaction,
   interactionEnabled,
+  ritual,
+  focusActive,
 }) {
   return (
     <>
@@ -219,6 +348,7 @@ function Scene({
           presenceMood={mood.key}
           interaction={interaction}
           interactionEnabled={interactionEnabled}
+          ritual={ritual}
         />
       </Suspense>
       <ContactShadows
@@ -239,6 +369,7 @@ function Scene({
         minPolarAngle={Math.PI / 3}
         maxPolarAngle={Math.PI / 1.85}
         dampingFactor={0.06}
+        enabled={!focusActive}
       />
     </>
   );
@@ -252,6 +383,8 @@ function App() {
   const [energy, setEnergy] = useState(72);
   const [blooming, setBlooming] = useState(false);
   const [presenceLabOpen, setPresenceLabOpen] = useState(false);
+  const [ritualPanelOpen, setRitualPanelOpen] = useState(false);
+  const [captureStatus, setCaptureStatus] = useState("idle");
   const reducedMotion = useReducedMotion();
   const presence = usePresence();
   const {
@@ -272,6 +405,7 @@ function App() {
     state,
     enabled: !isRunning,
   });
+  const ritual = useRitualGarden();
   const current = STATES.find((item) => item[0] === state);
   useEffect(() => {
     if (!blooming || state === "sleep" || energy >= 100) return;
@@ -297,9 +431,50 @@ function App() {
     setState("idle");
     setBlooming(true);
   };
+
+  useEffect(() => {
+    if (!ritual.focus.completionId) return undefined;
+    interaction.celebrateFocus();
+    setState("success");
+    const timer = window.setTimeout(() => setState("idle"), 2400);
+    return () => window.clearTimeout(timer);
+  }, [ritual.focus.completionId]);
+
+  const addRitualThought = (text) => {
+    const thought = ritual.addThought(text);
+    if (thought) interaction.celebrateThought();
+  };
+
+  const startFocus = (minutes) => {
+    setState("idle");
+    setBlooming(false);
+    setRitualPanelOpen(false);
+    setPresenceLabOpen(false);
+    ritual.clearSelectedThought();
+    ritual.startFocus(minutes);
+  };
+
+  const captureMoment = async () => {
+    setCaptureStatus("working");
+    try {
+      const result = await captureSenMoment({
+        phase: presence.phase.key,
+        weather: presence.weather.key,
+        mood: presence.mood.key,
+        thoughtCount: ritual.thoughtCount,
+      });
+      setCaptureStatus(result.mode === "cancelled" ? "idle" : "done");
+    } catch {
+      setCaptureStatus("error");
+    }
+    window.setTimeout(() => setCaptureStatus("idle"), 2200);
+  };
+
   return (
     <main
-      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key}`}
+      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key} ${
+        ritual.focus.active ? "focus-mode" : ""
+      }`}
     >
       <header className="topbar">
         <a className="brand" href="./" aria-label="Sen home">
@@ -409,7 +584,11 @@ function App() {
               <Canvas
                 key={resetKey}
                 camera={{ position: [0, 0.75, 6.4], fov: 38 }}
-                gl={{ antialias: true, alpha: true }}
+                gl={{
+                  antialias: true,
+                  alpha: true,
+                  preserveDrawingBuffer: true,
+                }}
                 dpr={[1, 1.5]}
                 fallback={
                   <div className="scene-fallback">
@@ -430,7 +609,9 @@ function App() {
                   weather={presence.weather}
                   mood={presence.mood}
                   interaction={interaction}
-                  interactionEnabled={!isRunning}
+                  interactionEnabled={!isRunning && !ritual.focus.active}
+                  ritual={ritual}
+                  focusActive={ritual.focus.active}
                 />
               </Canvas>
             </SceneBoundary>
@@ -448,6 +629,15 @@ function App() {
             >
               Presence preview
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPresenceLabOpen(false);
+                setRitualPanelOpen((value) => !value);
+              }}
+            >
+              Rituals
+            </button>
             <button onClick={() => setResetKey((k) => k + 1)}>
               Reset view ↺
             </button>
@@ -457,6 +647,40 @@ function App() {
               presence={presence}
               onClose={() => setPresenceLabOpen(false)}
             />
+          )}
+          {ritualPanelOpen && !ritual.focus.active && (
+            <RitualPanel
+              ritual={ritual}
+              onClose={() => setRitualPanelOpen(false)}
+              onAddThought={addRitualThought}
+              onStartFocus={startFocus}
+              onCapture={captureMoment}
+              captureStatus={captureStatus}
+              disabled={isRunning}
+            />
+          )}
+          {ritual.selectedThought && !ritual.focus.active && (
+            <div className="thought-card" role="status">
+              <button
+                type="button"
+                onClick={ritual.clearSelectedThought}
+                aria-label="Close thought"
+              >
+                ×
+              </button>
+              <small>A THOUGHT RESTING HERE</small>
+              <p>“{ritual.selectedThought.text}”</p>
+              <span>
+                {new Date(ritual.selectedThought.createdAt).toLocaleDateString()}
+              </span>
+              <button
+                type="button"
+                className="thought-remove"
+                onClick={() => ritual.removeThought(ritual.selectedThought.id)}
+              >
+                Let it go
+              </button>
+            </div>
           )}
         </section>
 
@@ -661,13 +885,20 @@ function App() {
           )}
         </form>
       </section>
+      {ritual.focus.active && (
+        <FocusHUD
+          focus={ritual.focus}
+          onTogglePause={ritual.toggleFocusPause}
+          onExit={ritual.stopFocus}
+        />
+      )}
       <footer className="bottombar">
         <span>
           <LotusMark />
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>P2.2 · DISCOVER · v0.9</span>
+        <span>P2 · PLAY COMPLETE · v1.0</span>
       </footer>
     </main>
   );
