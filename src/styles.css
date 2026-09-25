@@ -75,52 +75,55 @@ a {
 }
 
 .app-shell.time-dawn {
-  --presence-glow: #f7d9cf75;
-  --presence-wash: #fff1e230;
-  --presence-moon-a: #fff6ec;
-  --presence-moon-b: #efcfc56f;
-  --presence-moon-c: #e9cfc03d;
+  --presence-glow: #f3bfae99;
+  --presence-wash: #f7d6c54a;
+  --presence-moon-a: #ffe9dc;
+  --presence-moon-b: #edbba591;
+  --presence-moon-c: #dfad8c52;
 }
 
 .app-shell.time-day {
-  --presence-glow: #faeeec70;
-  --presence-wash: #fffdf71f;
+  --presence-glow: #fff0dd87;
+  --presence-wash: #fff8ea30;
+  --presence-moon-a: #fffaf2;
+  --presence-moon-b: #f5dfcc72;
+  --presence-moon-c: #ecd6c33f;
 }
 
 .app-shell.time-dusk {
-  --presence-glow: #eab9b879;
-  --presence-wash: #cf9f8330;
-  --presence-moon-a: #ffe9df;
-  --presence-moon-b: #dda7a475;
-  --presence-moon-c: #d2a17c3d;
+  --presence-glow: #df927c9c;
+  --presence-wash: #bd765044;
+  --presence-moon-a: #ffd8ca;
+  --presence-moon-b: #d98c7f9b;
+  --presence-moon-c: #bd76575f;
 }
 
 .app-shell.time-night {
-  --presence-glow: #b9afbf55;
-  --presence-wash: #75677518;
-  --presence-moon-a: #f3e9e9;
-  --presence-moon-b: #c5b5c069;
-  --presence-moon-c: #95879633;
+  --presence-glow: #84778b83;
+  --presence-wash: #5d56643f;
+  --presence-moon-a: #e7dce5;
+  --presence-moon-b: #aa98aa88;
+  --presence-moon-c: #6f65786b;
 }
 
 .app-shell.weather-cloudy {
-  --presence-glow: #d6c9c95f;
-  --presence-wash: #a9958c12;
+  --presence-glow: #b9afb16f;
+  --presence-wash: #8f858832;
 }
 
 .app-shell.weather-rain {
-  --presence-glow: #c9b8bc55;
-  --presence-wash: #7f747a18;
+  --presence-glow: #9d919866;
+  --presence-wash: #6f69713b;
 }
 
 .app-shell.weather-mist {
-  --presence-glow: #e9dfdc70;
-  --presence-wash: #e8dfdc35;
+  --presence-glow: #eee7e3a8;
+  --presence-wash: #ddd5d173;
 }
 
 .app-shell.weather-wind {
-  --presence-glow: #edd9d66a;
-  --presence-wash: #b99d8e12;
+  --presence-glow: #e4ccc77d;
+  --presence-wash: #aa8e8030;
 }
 .topbar,
 .workspace,
@@ -372,6 +375,83 @@ em {
   transition: color 1s ease;
 }
 
+.presence-status-chip {
+  position: absolute;
+  z-index: 5;
+  top: 49px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 40px);
+  padding: 6px 10px;
+  border: 1px solid #d8c5bb9a;
+  border-radius: 999px;
+  background: #fffaf2c4;
+  box-shadow: 0 8px 24px #7357460c;
+  backdrop-filter: blur(8px);
+  color: #856e67;
+  font-size: 7px;
+  letter-spacing: 0.9px;
+  pointer-events: none;
+  transition:
+    background 0.8s ease,
+    border-color 0.8s ease,
+    color 0.8s ease;
+}
+
+.presence-status-chip strong {
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.presence-status-icon {
+  font-size: 11px;
+  line-height: 1;
+  color: #a36577;
+}
+
+.presence-status-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.presence-status-mood {
+  color: #9e7f63;
+}
+
+.presence-status-separator {
+  opacity: 0.55;
+}
+
+.time-dusk .presence-status-chip {
+  background: #f8ddd2cf;
+  border-color: #cf9a87a8;
+  color: #8b584e;
+}
+
+.time-night .presence-status-chip {
+  background: #716776c7;
+  border-color: #b9a9b89c;
+  color: #f1e8ee;
+}
+
+.time-night .presence-status-icon,
+.time-night .presence-status-mood {
+  color: #ead3de;
+}
+
+.weather-rain .presence-status-chip {
+  border-color: #a69ba2b5;
+}
+
+.weather-mist .presence-status-chip {
+  background: #f5efebd8;
+}
+
 .time-dawn .presence-label {
   color: #ad7c6b;
 }
@@ -394,12 +474,37 @@ em {
 }
 
 .time-night .garden-moon {
-  box-shadow: 0 0 70px #d7c7cf2e;
+  box-shadow:
+    0 0 90px #cbb8c95e,
+    inset 0 0 65px #6e627233;
+}
+
+.time-dawn .garden-moon {
+  box-shadow: 0 0 75px #efbca85c;
+}
+
+.time-day .garden-moon {
+  box-shadow: 0 0 65px #f2d4aa42;
 }
 
 .time-dusk .garden-moon {
-  box-shadow: 0 0 62px #d89f8940;
+  box-shadow:
+    0 0 86px #d68e765d,
+    inset 0 0 56px #a85f4930;
 }
+
+.weather-rain .garden-moon {
+  filter: saturate(0.72) brightness(0.88);
+}
+
+.weather-cloudy .garden-moon {
+  filter: saturate(0.66) brightness(0.93);
+}
+
+.weather-mist .garden-moon {
+  filter: saturate(0.78) brightness(1.06);
+}
+
 .scene-caption {
   position: absolute;
   bottom: 35px;
@@ -970,6 +1075,15 @@ em {
   }
   .scene-topline {
     top: 4px;
+    font-size: 6px;
+  }
+  .presence-status-chip {
+    top: 22px;
+    gap: 5px;
+    padding: 5px 8px;
+    font-size: 6px;
+  }
+  .presence-status-chip strong {
     font-size: 6px;
   }
   .canvas-wrap {

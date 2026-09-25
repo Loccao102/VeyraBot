@@ -26,6 +26,18 @@ const QUICK_COMMANDS = [
   "Explore a design",
 ];
 
+const PRESENCE_ICONS = {
+  dawn: "☼",
+  day: "☀",
+  dusk: "◒",
+  night: "☾",
+  clear: "✧",
+  cloudy: "☁",
+  rain: "☂",
+  mist: "≋",
+  wind: "〰",
+};
+
 function LotusMark({ className = "" }) {
   return (
     <svg
@@ -341,6 +353,18 @@ function App() {
             <span className="presence-label">
               {presence.phase.label} · {presence.weather.label}
             </span>
+          </div>
+          <div className="presence-status-chip" aria-live="polite">
+            <span className="presence-status-icon" aria-hidden="true">
+              {PRESENCE_ICONS[presence.phase.key]}
+            </span>
+            <strong>{presence.phase.label}</strong>
+            <span className="presence-status-separator">·</span>
+            <span className="presence-status-weather">
+              {PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}
+            </span>
+            <span className="presence-status-separator">·</span>
+            <span className="presence-status-mood">{presence.mood.label}</span>
           </div>
           <div className="canvas-wrap">
             <SceneBoundary>
