@@ -835,6 +835,162 @@ function GardenFireflies({ color, reducedMotion }) {
   );
 }
 
+function AdaptiveGardenSignature({ personal, reducedMotion }) {
+  const style = personal?.gardenStyle ?? "young";
+  const dna = personal?.dna ?? {};
+  const leaf = dna.leaf ?? JADE;
+  const pink = dna.petalPrimary ?? PINK;
+  const gold = dna.gold ?? GOLD;
+  const core = dna.coreGlow ?? "#ec96a7";
+
+  if (style === "young") return null;
+
+  if (style === "focus") {
+    return (
+      <group>
+        {[0, 1, 2].map((i) => (
+          <mesh
+            key={i}
+            position={[-1.18 + i * 0.13, -1.02 + i * 0.075, -0.55 + i * 0.02]}
+            rotation={[0.12, 0.5 + i * 0.35, 0.05]}
+            scale={[0.16 - i * 0.018, 0.055, 0.12 - i * 0.012]}
+          >
+            <dodecahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial
+              color={i === 1 ? "#b8aaa2" : "#c9bcb2"}
+              roughness={0.86}
+            />
+          </mesh>
+        ))}
+        <group position={[-1.18, -1.095, -0.55]} rotation={[-Math.PI / 2, 0, 0]}>
+          {[0, 1].map((i) => (
+            <mesh key={i}>
+              <ringGeometry args={[0.24 + i * 0.16, 0.247 + i * 0.16, 72]} />
+              <meshBasicMaterial
+                color={i ? gold : leaf}
+                transparent
+                opacity={0.11}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          ))}
+        </group>
+      </group>
+    );
+  }
+
+  if (style === "reflection") {
+    return (
+      <group>
+        {Array.from({ length: 5 }, (_, i) => {
+          const angle = -1.1 + i * 0.55;
+          return (
+            <group
+              key={i}
+              position={[
+                Math.sin(angle) * (1.42 + (i % 2) * 0.12),
+                -1.02,
+                Math.cos(angle) * 0.64 - 0.22,
+              ]}
+              rotation={[0, -angle, i % 2 ? -0.18 : 0.18]}
+            >
+              <Petal
+                rotation={[1.34, 0, 0]}
+                scale={[0.15, 0.24, 0.1]}
+                color={i % 2 ? pink : dna.petalSoft ?? PEARL}
+                accent={gold}
+              />
+            </group>
+          );
+        })}
+      </group>
+    );
+  }
+
+  if (style === "explorer") {
+    return (
+      <group>
+        {Array.from({ length: 8 }, (_, i) => {
+          const angle = (i / 8) * TAU + 0.4;
+          return (
+            <mesh
+              key={i}
+              position={[
+                Math.sin(angle) * (1.28 + (i % 3) * 0.18),
+                -0.58 + (i % 4) * 0.28,
+                Math.cos(angle) * 0.62 - 0.06,
+              ]}
+              rotation={[0.3, angle, Math.PI / 4]}
+            >
+              <octahedronGeometry args={[0.024 + (i % 3) * 0.006, 0]} />
+              <meshBasicMaterial
+                color={i % 3 === 0 ? gold : i % 2 ? pink : leaf}
+                transparent
+                opacity={0.42}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          );
+        })}
+      </group>
+    );
+  }
+
+  if (style === "nocturne") {
+    return (
+      <group>
+        <GardenFireflies color={core} reducedMotion={reducedMotion} />
+        <mesh position={[-1.38, -0.82, -0.5]}>
+          <octahedronGeometry args={[0.085, 0]} />
+          <meshPhysicalMaterial
+            color={dna.petalSoft ?? PEARL}
+            emissive={core}
+            emissiveIntensity={0.62}
+            roughness={0.22}
+            clearcoat={0.9}
+          />
+        </mesh>
+        <pointLight
+          position={[-1.38, -0.76, -0.5]}
+          color={core}
+          intensity={0.3}
+          distance={1.4}
+          decay={2}
+        />
+      </group>
+    );
+  }
+
+  return (
+    <group>
+      <mesh position={[-1.32, -1.045, -0.42]} scale={[0.14, 0.06, 0.11]}>
+        <dodecahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial color="#c1b4aa" roughness={0.85} />
+      </mesh>
+      <group position={[1.3, -1.02, -0.38]} rotation={[0, -0.5, 0]}>
+        <Petal
+          rotation={[1.34, 0, 0]}
+          scale={[0.14, 0.22, 0.1]}
+          color={pink}
+          accent={gold}
+        />
+      </group>
+      <mesh position={[0.95, -0.46, -0.35]}>
+        <sphereGeometry args={[0.024, 8, 6]} />
+        <meshBasicMaterial
+          color={core}
+          transparent
+          opacity={0.42}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function PersonalGardenGrowth({ personal, reducedMotion }) {
   const level = personal?.level ?? 1;
   const dna = personal?.dna ?? {};
@@ -856,6 +1012,10 @@ function PersonalGardenGrowth({ personal, reducedMotion }) {
 
   return (
     <group>
+      <AdaptiveGardenSignature
+        personal={personal}
+        reducedMotion={reducedMotion}
+      />
       {level >= 2 &&
         leaves.slice(0, Math.min(leaves.length, level)).map(
           ([x, y, z, rotation, scale], index) => (
@@ -1075,263 +1235,432 @@ function FloatingPetals({ state, speed, motion, bloom }) {
 }
 
 
-function IdleMotes({ motion }) {
-  const ref = useRef();
-  useFrame(({ clock }) => {
-    ref.current.children.forEach((child, i) => {
-      const t = clock.elapsedTime * 0.28 * motion + i * 0.9;
-      child.position.y = 0.15 + (i % 3) * 0.48 + Math.sin(t) * 0.08;
-      child.position.x =
-        (i % 2 ? 1 : -1) * (0.85 + (i % 3) * 0.16) + Math.cos(t * 0.7) * 0.05;
-      child.material.opacity = 0.14 + (Math.sin(t * 1.3) + 1) * 0.05;
-    });
-  });
-  return (
-    <group ref={ref}>
-      {Array.from({ length: 6 }, (_, i) => (
-        <mesh key={i} position={[0, 0.2, -0.2 - (i % 2) * 0.2]}>
-          <sphereGeometry args={[0.026 + (i % 2) * 0.008, 10, 8]} />
-          <meshBasicMaterial
-            color={i % 3 === 0 ? GOLD : "#f4b8c7"}
-            transparent
-            opacity={0.16}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
+function IdleMotes({ motion, strength = 1 }) {
+  const particles = useRef();
+  const rings = useRef();
+  const visual = 0.18 + strength * 0.92;
+  const speed = 0.45 + strength * 0.65;
 
-function ThinkingEffect({ motion }) {
-  const ref = useRef();
   useFrame(({ clock }) => {
-    ref.current.rotation.y = clock.elapsedTime * 0.48 * motion;
-    ref.current.rotation.z = Math.sin(clock.elapsedTime * 0.5) * 0.04 * motion;
-    ref.current.children.forEach((child, i) => {
-      child.position.y = Math.sin(clock.elapsedTime * 1.15 + i) * 0.07;
-      child.rotation.y += 0.012 * motion;
-      child.rotation.z += 0.018 * motion;
-      child.material.opacity =
-        0.45 + (Math.sin(clock.elapsedTime * 1.8 + i) + 1) * 0.16;
+    const time = clock.elapsedTime;
+    particles.current?.children.forEach((child, i) => {
+      const t = time * 0.3 * speed * motion + i * 0.82;
+      const angle = i * 1.73 + t * 0.12;
+      const radius = 0.78 + (i % 4) * 0.14;
+      child.position.set(
+        Math.sin(angle) * radius,
+        -0.05 + (i % 5) * 0.34 + Math.sin(t) * 0.09 * motion,
+        Math.cos(angle) * radius * 0.38 - 0.08,
+      );
+      child.material.opacity = Math.min(
+        0.58,
+        (0.1 + (Math.sin(t * 1.25) + 1) * 0.055) * visual,
+      );
+    });
+    rings.current?.children.forEach((mesh, i) => {
+      const pulse = 0.92 + Math.sin(time * (0.42 + i * 0.08)) * 0.05 * motion;
+      mesh.scale.setScalar(pulse * (1 + i * 0.12));
+      mesh.material.opacity = (0.045 + i * 0.018) * visual;
     });
   });
 
   return (
-    <group ref={ref} position={[0, 1.0, 0]}>
-      {Array.from({ length: 7 }, (_, i) => {
-        const angle = (i / 7) * TAU;
-        return (
-          <mesh
-            key={i}
-            position={[
-              Math.sin(angle) * (0.92 + (i % 2) * 0.12),
-              0,
-              Math.cos(angle) * 0.58,
-            ]}
-            rotation={[0.2, angle, Math.PI / 4]}
-          >
-            <octahedronGeometry args={[0.055 + (i % 3) * 0.012, 0]} />
+    <group>
+      <group ref={particles}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <mesh key={i}>
+            <sphereGeometry args={[0.024 + (i % 3) * 0.007, 10, 8]} />
             <meshBasicMaterial
-              color={i % 2 ? "#f0a9bd" : GOLD}
+              color={i % 4 === 0 ? GOLD : i % 3 === 0 ? JADE : "#f4b8c7"}
               transparent
-              opacity={0.62}
+              opacity={0.18}
               depthWrite={false}
             />
           </mesh>
-        );
-      })}
+        ))}
+      </group>
+      <group ref={rings} position={[0, -0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {[0, 1].map((i) => (
+          <mesh key={i}>
+            <ringGeometry args={[0.7 + i * 0.16, 0.708 + i * 0.16, 80]} />
+            <meshBasicMaterial
+              color={i ? "#d8b58c" : "#9aae9d"}
+              transparent
+              opacity={0.06}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
 
-function ListeningEffect({ motion }) {
-  const ref = useRef();
+function ThinkingEffect({ motion, strength = 1 }) {
+  const orbit = useRef();
+  const rings = useRef();
+  const visual = 0.18 + strength * 0.92;
+  const speed = 0.55 + strength * 0.7;
+
   useFrame(({ clock }) => {
-    ref.current.children.forEach((sideGroup, sideIndex) => {
-      sideGroup.children.forEach((mesh, i) => {
-        const phase = (clock.elapsedTime * 0.82 * motion + i * 0.24) % 1;
-        mesh.scale.setScalar(0.7 + phase * 0.72);
-        mesh.material.opacity = (1 - phase) * (0.34 - i * 0.055);
-      });
-      sideGroup.position.y =
-        0.78 + Math.sin(clock.elapsedTime * 1.3 + sideIndex) * 0.025 * motion;
+    const t = clock.elapsedTime;
+    orbit.current.rotation.y = t * 0.58 * speed * motion;
+    orbit.current.rotation.z = Math.sin(t * 0.5) * 0.055 * motion;
+    orbit.current.children.forEach((child, i) => {
+      child.position.y = Math.sin(t * 1.35 + i) * 0.09 * motion;
+      child.rotation.y += 0.015 * motion * speed;
+      child.rotation.z += 0.022 * motion * speed;
+      child.material.opacity = Math.min(
+        0.95,
+        (0.42 + (Math.sin(t * 2 + i) + 1) * 0.18) * visual,
+      );
+    });
+    rings.current?.children.forEach((mesh, i) => {
+      mesh.rotation.z = (i ? -1 : 1) * t * 0.18 * speed * motion;
+      mesh.material.opacity = (0.12 + i * 0.04) * visual;
     });
   });
 
   return (
-    <group ref={ref}>
-      {[-1, 1].map((side) => (
-        <group
-          key={side}
-          position={[side * 0.82, 0.78, 0.12]}
-          rotation={[0, side * Math.PI / 2, 0]}
-        >
-          {[0, 1, 2].map((i) => (
-            <mesh key={i}>
-              <ringGeometry args={[0.28 + i * 0.09, 0.292 + i * 0.09, 64]} />
+    <group position={[0, 0.94, 0]}>
+      <group ref={rings}>
+        <mesh rotation={[1.18, 0.2, 0.22]}>
+          <torusGeometry args={[0.83, 0.008, 8, 96]} />
+          <meshBasicMaterial color="#d6aa72" transparent opacity={0.18} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[1.02, -0.45, -0.38]}>
+          <torusGeometry args={[1.02, 0.006, 8, 96]} />
+          <meshBasicMaterial color="#d998ac" transparent opacity={0.13} depthWrite={false} />
+        </mesh>
+      </group>
+      <group ref={orbit}>
+        {Array.from({ length: 9 }, (_, i) => {
+          const angle = (i / 9) * TAU;
+          return (
+            <mesh
+              key={i}
+              position={[
+                Math.sin(angle) * (0.9 + (i % 2) * 0.16),
+                0,
+                Math.cos(angle) * 0.62,
+              ]}
+              rotation={[0.2, angle, Math.PI / 4]}
+            >
+              <octahedronGeometry args={[0.058 + (i % 3) * 0.013, 0]} />
               <meshBasicMaterial
-                color={i === 0 ? "#8da798" : "#d9b08a"}
+                color={i % 3 === 0 ? "#d8ad72" : "#ef9fb8"}
                 transparent
-                opacity={0.28}
+                opacity={0.68}
                 depthWrite={false}
-                side={THREE.DoubleSide}
                 blending={THREE.AdditiveBlending}
               />
             </mesh>
-          ))}
-        </group>
-      ))}
+          );
+        })}
+      </group>
     </group>
   );
 }
 
-function WorkingEffect({ motion }) {
-  const ref = useRef();
+function ListeningEffect({ motion, strength = 1 }) {
+  const waves = useRef();
+  const center = useRef();
+  const visual = 0.18 + strength * 0.92;
+  const speed = 0.52 + strength * 0.72;
+
   useFrame(({ clock }) => {
-    ref.current.rotation.y = clock.elapsedTime * 0.28 * motion;
-    ref.current.children.forEach((panel, i) => {
-      const t = clock.elapsedTime * 1.15 + i * 1.4;
-      panel.position.y = -0.08 + Math.sin(t) * 0.09 * motion;
-      panel.rotation.z = Math.sin(t * 0.8) * 0.08 * motion;
+    const t = clock.elapsedTime;
+    waves.current?.children.forEach((sideGroup, sideIndex) => {
+      sideGroup.children.forEach((mesh, i) => {
+        const phase = (t * 0.92 * speed * motion + i * 0.2) % 1;
+        mesh.scale.setScalar(0.62 + phase * (0.82 + strength * 0.16));
+        mesh.material.opacity =
+          (1 - phase) * Math.max(0.05, (0.46 - i * 0.075) * visual);
+      });
+      sideGroup.position.y = 0.76 + Math.sin(t * 1.45 + sideIndex) * 0.035 * motion;
+    });
+    if (center.current) {
+      const pulse = 0.82 + (Math.sin(t * 2.2 * speed) + 1) * 0.16;
+      center.current.scale.setScalar(pulse);
+      center.current.material.opacity = 0.1 * visual;
+    }
+  });
+
+  return (
+    <group>
+      <mesh ref={center} position={[0, 0.78, -0.14]} rotation={[0, 0, 0]}>
+        <ringGeometry args={[0.52, 0.535, 80]} />
+        <meshBasicMaterial
+          color="#9eb3a5"
+          transparent
+          opacity={0.12}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      <group ref={waves}>
+        {[-1, 1].map((side) => (
+          <group
+            key={side}
+            position={[side * 0.83, 0.76, 0.1]}
+            rotation={[0, side * Math.PI / 2, 0]}
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <mesh key={i}>
+                <ringGeometry args={[0.25 + i * 0.1, 0.266 + i * 0.1, 64]} />
+                <meshBasicMaterial
+                  color={i % 2 ? "#d8aa81" : "#85a493"}
+                  transparent
+                  opacity={0.3}
+                  depthWrite={false}
+                  side={THREE.DoubleSide}
+                  blending={THREE.AdditiveBlending}
+                />
+              </mesh>
+            ))}
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+function WorkingEffect({ motion, strength = 1 }) {
+  const panels = useRef();
+  const nodes = useRef();
+  const visual = 0.18 + strength * 0.92;
+  const speed = 0.5 + strength * 0.72;
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    panels.current.rotation.y = t * 0.34 * speed * motion;
+    panels.current.children.forEach((panel, i) => {
+      const phase = t * 1.3 + i * 1.25;
+      panel.position.y = -0.04 + Math.sin(phase) * 0.1 * motion;
+      panel.rotation.z = Math.sin(phase * 0.75) * 0.09 * motion;
       const mesh = panel.children[0];
       if (mesh?.material) {
-        mesh.material.opacity = 0.13 + (Math.sin(t) + 1) * 0.035;
+        mesh.material.opacity = Math.min(
+          0.46,
+          (0.18 + (Math.sin(phase) + 1) * 0.05) * visual,
+        );
       }
+    });
+    nodes.current?.children.forEach((node, i) => {
+      const angle = t * 0.72 * speed * motion + (i / 7) * TAU;
+      const radius = 0.58 + (i % 2) * 0.08;
+      node.position.set(
+        Math.sin(angle) * radius,
+        0.15 + Math.sin(angle * 2 + i) * 0.06,
+        Math.cos(angle) * 0.35 + 0.25,
+      );
+      node.material.opacity = Math.min(0.9, (0.28 + (i % 3) * 0.07) * visual);
     });
   });
 
   return (
-    <group ref={ref}>
-      {Array.from({ length: 4 }, (_, i) => {
-        const angle = (i / 4) * TAU + 0.45;
-        return (
-          <group
-            key={i}
-            position={[
-              Math.sin(angle) * 1.22,
-              -0.08,
-              Math.cos(angle) * 0.72,
-            ]}
-            rotation={[0, -angle, i % 2 ? -0.05 : 0.05]}
-          >
-            <mesh>
-              <planeGeometry args={[0.34, 0.24]} />
-              <meshBasicMaterial
-                color={JADE}
-                transparent
-                opacity={0.15}
-                depthWrite={false}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-            {[0, 1, 2].map((lineIndex) => (
-              <Line
-                key={lineIndex}
-                points={[
-                  [-0.11, 0.055 - lineIndex * 0.055, 0.006],
-                  [
-                    0.04 + lineIndex * 0.03,
-                    0.055 - lineIndex * 0.055,
-                    0.006,
-                  ],
-                ]}
-                color={lineIndex === 0 ? "#d6b47f" : JADE}
-                lineWidth={1.25}
-                transparent
-                opacity={0.75}
-              />
-            ))}
-          </group>
-        );
-      })}
+    <group>
+      <group ref={panels}>
+        {Array.from({ length: 5 }, (_, i) => {
+          const angle = (i / 5) * TAU + 0.35;
+          return (
+            <group
+              key={i}
+              position={[
+                Math.sin(angle) * 1.16,
+                -0.04,
+                Math.cos(angle) * 0.72,
+              ]}
+              rotation={[0, -angle, i % 2 ? -0.06 : 0.06]}
+            >
+              <mesh>
+                <planeGeometry args={[0.38, 0.27]} />
+                <meshBasicMaterial
+                  color={i % 2 ? JADE : "#8a9c8d"}
+                  transparent
+                  opacity={0.22}
+                  depthWrite={false}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+              {[0, 1, 2].map((lineIndex) => (
+                <Line
+                  key={lineIndex}
+                  points={[
+                    [-0.12, 0.064 - lineIndex * 0.062, 0.006],
+                    [
+                      0.05 + lineIndex * 0.035,
+                      0.064 - lineIndex * 0.062,
+                      0.006,
+                    ],
+                  ]}
+                  color={lineIndex === 0 ? "#d8b174" : "#afc1b1"}
+                  lineWidth={1.45}
+                  transparent
+                  opacity={0.86}
+                />
+              ))}
+            </group>
+          );
+        })}
+      </group>
+      <group ref={nodes}>
+        {Array.from({ length: 7 }, (_, i) => (
+          <mesh key={i}>
+            <octahedronGeometry args={[0.026 + (i % 2) * 0.008, 0]} />
+            <meshBasicMaterial
+              color={i % 3 === 0 ? "#d6ae73" : "#9db5a3"}
+              transparent
+              opacity={0.38}
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
 
-function SuccessEffect({ motion }) {
-  const ref = useRef();
+function SuccessEffect({ motion, strength = 1 }) {
+  const particles = useRef();
+  const rings = useRef();
+  const visual = 0.18 + strength * 0.92;
+  const speed = 0.48 + strength * 0.7;
+
   useFrame(({ clock }) => {
-    const speed = motion ? 0.34 : 0.08;
-    ref.current.children.forEach((child, i) => {
-      const phase = (clock.elapsedTime * speed + i / 14) % 1;
-      const angle = i * 2.17 + phase * 0.95;
-      const radius = 0.52 + (i % 4) * 0.16 + phase * 0.16;
+    const t = clock.elapsedTime;
+    particles.current.children.forEach((child, i) => {
+      const phase = (t * 0.42 * speed * (motion ? 1 : 0.22) + i / 20) % 1;
+      const angle = i * 2.03 + phase * 1.15;
+      const radius = 0.46 + (i % 5) * 0.15 + phase * 0.22;
       child.position.set(
         Math.sin(angle) * radius,
-        -0.62 + phase * 3.15,
-        Math.cos(angle) * 0.42 - 0.16,
+        -0.68 + phase * 3.35,
+        Math.cos(angle) * 0.46 - 0.14,
       );
-      child.rotation.z = angle + phase * 2.2;
-      child.rotation.x = 0.18 + phase * 0.7;
-      const scale = Math.sin(Math.PI * phase) * (i % 3 === 0 ? 1.12 : 0.9);
-      child.scale.setScalar(Math.max(0.06, scale));
+      child.rotation.z = angle + phase * 2.5;
+      child.rotation.x = 0.16 + phase * 0.8;
+      const scale =
+        Math.sin(Math.PI * phase) * (i % 4 === 0 ? 1.2 : 0.94) * visual;
+      child.scale.setScalar(Math.max(0.05, scale));
       child.children.forEach((part) => {
         if (part.material) {
-          part.material.opacity = Math.sin(Math.PI * phase) * 0.88;
+          part.material.opacity = Math.min(
+            1,
+            Math.sin(Math.PI * phase) * 0.94 * visual,
+          );
         }
       });
     });
-  });
-
-  return (
-    <group ref={ref}>
-      {Array.from({ length: 14 }, (_, i) => (
-        <group key={i}>
-          {i % 3 === 0 ? (
-            <Petal
-              scale={[0.11, 0.18, 0.12]}
-              color={i % 2 ? "#f1a9bd" : "#ffd8df"}
-            />
-          ) : (
-            <mesh rotation={[0, 0, Math.PI / 4]}>
-              <octahedronGeometry args={[0.045 + (i % 2) * 0.018, 0]} />
-              <meshBasicMaterial
-                color={i % 2 ? "#f0b5c5" : "#d6aa72"}
-                transparent
-                opacity={0.8}
-                depthWrite={false}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-          )}
-        </group>
-      ))}
-    </group>
-  );
-}
-
-function SleepEffect({ motion }) {
-  const ref = useRef();
-  useFrame(({ clock }) => {
-    const speed = motion ? 0.055 : 0.012;
-    ref.current.children.forEach((child, i) => {
-      const phase = (clock.elapsedTime * speed + i / 9) % 1;
-      const angle = i * 1.83 + phase * 0.7;
-      child.position.set(
-        Math.sin(angle) * (0.62 + (i % 3) * 0.18),
-        1.65 - phase * 2.15,
-        Math.cos(angle) * 0.44 - 0.12,
-      );
-      const twinkle = 0.4 + 0.6 * Math.sin(Math.PI * phase);
-      child.scale.setScalar(0.72 + twinkle * 0.35);
-      child.material.opacity = 0.08 + twinkle * 0.22;
+    rings.current?.children.forEach((mesh, i) => {
+      const phase = (t * 0.38 * speed + i * 0.22) % 1;
+      mesh.scale.setScalar(0.52 + phase * 1.3);
+      mesh.material.opacity = (1 - phase) * 0.22 * visual;
     });
   });
 
   return (
-    <group ref={ref}>
-      {Array.from({ length: 9 }, (_, i) => (
-        <mesh key={i}>
-          <sphereGeometry args={[0.028 + (i % 3) * 0.008, 10, 8]} />
-          <meshBasicMaterial
-            color={i % 2 ? "#d6c592" : "#9db39b"}
-            transparent
-            opacity={0.2}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
+    <group>
+      <group ref={particles}>
+        {Array.from({ length: 20 }, (_, i) => (
+          <group key={i}>
+            {i % 4 === 0 ? (
+              <Petal
+                scale={[0.12, 0.19, 0.13]}
+                color={i % 2 ? "#f0a1b9" : "#ffd7df"}
+              />
+            ) : (
+              <mesh rotation={[0, 0, Math.PI / 4]}>
+                <octahedronGeometry args={[0.045 + (i % 3) * 0.014, 0]} />
+                <meshBasicMaterial
+                  color={i % 2 ? "#f0acc0" : "#d9ae6f"}
+                  transparent
+                  opacity={0.85}
+                  depthWrite={false}
+                  blending={THREE.AdditiveBlending}
+                />
+              </mesh>
+            )}
+          </group>
+        ))}
+      </group>
+      <group ref={rings} position={[0, -0.74, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {[0, 1, 2].map((i) => (
+          <mesh key={i}>
+            <ringGeometry args={[0.52 + i * 0.11, 0.535 + i * 0.11, 80]} />
+            <meshBasicMaterial
+              color={i === 1 ? "#d7b06d" : "#dc9fb2"}
+              transparent
+              opacity={0.2}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+function SleepEffect({ motion, strength = 1 }) {
+  const dust = useRef();
+  const crescent = useRef();
+  const visual = 0.18 + strength * 0.92;
+  const speed = 0.45 + strength * 0.55;
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    dust.current.children.forEach((child, i) => {
+      const phase = (t * 0.07 * speed * (motion ? 1 : 0.24) + i / 12) % 1;
+      const angle = i * 1.67 + phase * 0.75;
+      child.position.set(
+        Math.sin(angle) * (0.58 + (i % 4) * 0.17),
+        1.76 - phase * 2.35,
+        Math.cos(angle) * 0.46 - 0.14,
+      );
+      const twinkle = 0.4 + 0.6 * Math.sin(Math.PI * phase);
+      child.scale.setScalar(0.72 + twinkle * 0.38);
+      child.material.opacity = Math.min(
+        0.55,
+        (0.07 + twinkle * 0.22) * visual,
+      );
+    });
+    if (crescent.current) {
+      crescent.current.rotation.z = -0.28 + Math.sin(t * 0.24) * 0.06 * motion;
+      crescent.current.material.opacity =
+        (0.1 + (Math.sin(t * 0.55) + 1) * 0.025) * visual;
+    }
+  });
+
+  return (
+    <group>
+      <group ref={dust}>
+        {Array.from({ length: 12 }, (_, i) => (
+          <mesh key={i}>
+            <sphereGeometry args={[0.027 + (i % 3) * 0.008, 10, 8]} />
+            <meshBasicMaterial
+              color={i % 3 === 0 ? "#d7c37e" : "#9fb39e"}
+              transparent
+              opacity={0.22}
+              depthWrite={false}
+            />
+          </mesh>
+        ))}
+      </group>
+      <mesh ref={crescent} position={[0.78, 1.36, -0.12]} rotation={[0, 0, -0.28]}>
+        <torusGeometry args={[0.19, 0.015, 8, 64, Math.PI * 1.42]} />
+        <meshBasicMaterial
+          color="#d8c88f"
+          transparent
+          opacity={0.13}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
     </group>
   );
 }
@@ -1464,13 +1793,23 @@ function DiscoveryEffect({ reaction, reducedMotion }) {
   );
 }
 
-function StateEffects({ state, motion }) {
-  if (state === "thinking") return <ThinkingEffect motion={motion} />;
-  if (state === "listening") return <ListeningEffect motion={motion} />;
-  if (state === "working") return <WorkingEffect motion={motion} />;
-  if (state === "success") return <SuccessEffect motion={motion} />;
-  if (state === "sleep") return <SleepEffect motion={motion} />;
-  return <IdleMotes motion={motion} />;
+function StateEffects({ state, motion, strength }) {
+  if (state === "thinking") {
+    return <ThinkingEffect motion={motion} strength={strength} />;
+  }
+  if (state === "listening") {
+    return <ListeningEffect motion={motion} strength={strength} />;
+  }
+  if (state === "working") {
+    return <WorkingEffect motion={motion} strength={strength} />;
+  }
+  if (state === "success") {
+    return <SuccessEffect motion={motion} strength={strength} />;
+  }
+  if (state === "sleep") {
+    return <SleepEffect motion={motion} strength={strength} />;
+  }
+  return <IdleMotes motion={motion} strength={strength} />;
 }
 
 export default function SenModel({
@@ -1493,6 +1832,7 @@ export default function SenModel({
     awake = useRef(),
     head = useRef(),
     crystal = useRef(),
+    coreAura = useRef(),
     budLight = useRef();
   const sidePetals = useRef({});
   const gazePointer = useGlobalGazePointer();
@@ -1628,9 +1968,10 @@ export default function SenModel({
       delta,
     );
     root.current.position.y =
-      Math.sin(t * (1.05 + presenceCalm * 0.25)) *
+      Math.sin(t * (0.92 + presenceCalm * 0.24)) *
       cfg.bob *
       hoverControl *
+      1.65 *
       motion *
       (0.72 + presenceCalm * 0.28);
     const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.2, 0.72);
@@ -1653,6 +1994,16 @@ export default function SenModel({
       awake.current.rotation.y,
       idleLook * 0.28 + gazeX * 0.038 * emergence,
       2.1,
+      delta,
+    );
+    awake.current.rotation.z = damp(
+      awake.current.rotation.z,
+      Math.sin(t * 0.48) *
+        0.018 *
+        hoverControl *
+        motion *
+        (0.7 + presenceCalm * 0.3),
+      2.4,
       delta,
     );
     head.current.position.y = damp(
@@ -1750,7 +2101,9 @@ export default function SenModel({
 
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
-      (state === "sleep" ? 0.18 : cfg.glow) * coreControl * sleepingPulse +
+      (state === "sleep" ? 0.18 : cfg.glow) *
+        (0.06 + coreControl * 1.12) *
+        sleepingPulse +
         coreInteractionGlow,
       coreHeld ? 8 : 4,
       delta,
@@ -1760,8 +2113,8 @@ export default function SenModel({
       (state === "sleep"
         ? 0.22 + Math.sin(t * 1.05) * 0.035 * motion
         : 0.32 + bloom.current * 0.52 + wakeFlash * 0.72) *
-        coreControl +
-        coreInteractionGlow * 0.62,
+        (0.04 + coreControl * 1.18) +
+        coreInteractionGlow * 0.72,
       coreHeld ? 8 : 4,
       delta,
     );
@@ -1789,6 +2142,21 @@ export default function SenModel({
       delta,
     );
     crystal.current.rotation.y += delta * (coreHeld ? 0.72 : 0.25) * motion;
+    if (coreAura.current) {
+      const warmth = THREE.MathUtils.clamp(coreControl / 2, 0, 1);
+      const pulse =
+        1 + Math.sin(t * (1.5 + warmth * 1.2)) * 0.07 * motion * warmth;
+      const auraScale =
+        (0.72 + warmth * 0.72 + coreInteractionGlow * 0.08) * pulse;
+      coreAura.current.scale.setScalar(auraScale);
+      coreAura.current.material.opacity = damp(
+        coreAura.current.material.opacity,
+        (0.015 + warmth * 0.24) * bloom.current +
+          coreInteractionGlow * 0.04,
+        6,
+        delta,
+      );
+    }
   });
   return (
     <group ref={root}>
@@ -1978,6 +2346,20 @@ export default function SenModel({
             clearcoat={1}
           />
         </mesh>
+        <mesh
+          ref={coreAura}
+          position={[0, -0.1, 0.295]}
+          scale={[0.9, 0.9, 0.9]}
+        >
+          <sphereGeometry args={[0.42, 24, 16]} />
+          <meshBasicMaterial
+            color={personalPalette.coreGlow}
+            transparent
+            opacity={0.08}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
         <Line
           points={[
             [0, 0.22, 0.31],
@@ -1997,7 +2379,7 @@ export default function SenModel({
         />
 
       </group>
-      <StateEffects state={state} motion={motion} />
+      <StateEffects state={state} motion={motion} strength={haloControl} />
       <DiscoveryEffect reaction={reaction} reducedMotion={reducedMotion} />
       {LOTUS_LAYERS.flatMap((layer, layerIndex) =>
         Array.from({ length: layer.count }, (_, index) => (
