@@ -78,94 +78,94 @@ export const SEN_STATES = {
 
 const MOOD_MOTION = {
   idle: {
-    floatAmp: 0.038,
-    floatSpeed: 0.92,
-    swayAmp: 0.022,
-    swaySpeed: 0.46,
-    headYawAmp: 0.055,
-    headPitchAmp: 0.02,
-    headSpeed: 0.44,
-    breatheAmp: 0.009,
-    breatheSpeed: 0.88,
-    petalAmp: 0.012,
-    corePulseAmp: 0.055,
-    corePulseSpeed: 1.12,
+    floatAmp: 0.072,
+    floatSpeed: 0.82,
+    swayAmp: 0.04,
+    swaySpeed: 0.42,
+    headYawAmp: 0.09,
+    headPitchAmp: 0.032,
+    headSpeed: 0.4,
+    breatheAmp: 0.018,
+    breatheSpeed: 0.82,
+    petalAmp: 0.022,
+    corePulseAmp: 0.075,
+    corePulseSpeed: 1.08,
     lean: 0,
   },
   thinking: {
-    floatAmp: 0.03,
-    floatSpeed: 0.72,
-    swayAmp: 0.032,
-    swaySpeed: 0.34,
-    headYawAmp: 0.072,
-    headPitchAmp: 0.036,
-    headSpeed: 0.34,
-    breatheAmp: 0.008,
-    breatheSpeed: 0.78,
-    petalAmp: 0.014,
-    corePulseAmp: 0.07,
-    corePulseSpeed: 1.02,
-    lean: -0.026,
+    floatAmp: 0.058,
+    floatSpeed: 0.64,
+    swayAmp: 0.05,
+    swaySpeed: 0.31,
+    headYawAmp: 0.12,
+    headPitchAmp: 0.06,
+    headSpeed: 0.31,
+    breatheAmp: 0.015,
+    breatheSpeed: 0.72,
+    petalAmp: 0.025,
+    corePulseAmp: 0.09,
+    corePulseSpeed: 0.96,
+    lean: -0.035,
   },
   listening: {
-    floatAmp: 0.026,
-    floatSpeed: 0.84,
-    swayAmp: 0.018,
-    swaySpeed: 0.4,
-    headYawAmp: 0.085,
-    headPitchAmp: 0.018,
-    headSpeed: 0.5,
-    breatheAmp: 0.007,
-    breatheSpeed: 0.96,
-    petalAmp: 0.01,
-    corePulseAmp: 0.05,
-    corePulseSpeed: 1.22,
-    lean: 0.036,
+    floatAmp: 0.052,
+    floatSpeed: 0.78,
+    swayAmp: 0.032,
+    swaySpeed: 0.36,
+    headYawAmp: 0.135,
+    headPitchAmp: 0.042,
+    headSpeed: 0.46,
+    breatheAmp: 0.014,
+    breatheSpeed: 0.9,
+    petalAmp: 0.018,
+    corePulseAmp: 0.075,
+    corePulseSpeed: 1.18,
+    lean: 0.05,
   },
   working: {
-    floatAmp: 0.018,
-    floatSpeed: 1.06,
-    swayAmp: 0.012,
-    swaySpeed: 0.72,
-    headYawAmp: 0.032,
-    headPitchAmp: 0.014,
-    headSpeed: 0.72,
-    breatheAmp: 0.006,
-    breatheSpeed: 1.16,
-    petalAmp: 0.008,
-    corePulseAmp: 0.082,
-    corePulseSpeed: 1.46,
-    lean: 0.012,
+    floatAmp: 0.04,
+    floatSpeed: 1.0,
+    swayAmp: 0.022,
+    swaySpeed: 0.68,
+    headYawAmp: 0.062,
+    headPitchAmp: 0.032,
+    headSpeed: 0.66,
+    breatheAmp: 0.012,
+    breatheSpeed: 1.08,
+    petalAmp: 0.014,
+    corePulseAmp: 0.11,
+    corePulseSpeed: 1.4,
+    lean: 0.018,
   },
   success: {
-    floatAmp: 0.052,
-    floatSpeed: 1.28,
-    swayAmp: 0.036,
-    swaySpeed: 0.86,
-    headYawAmp: 0.045,
-    headPitchAmp: 0.032,
-    headSpeed: 0.74,
-    breatheAmp: 0.012,
-    breatheSpeed: 1.34,
-    petalAmp: 0.018,
-    corePulseAmp: 0.12,
-    corePulseSpeed: 1.8,
-    lean: -0.012,
+    floatAmp: 0.09,
+    floatSpeed: 1.18,
+    swayAmp: 0.055,
+    swaySpeed: 0.78,
+    headYawAmp: 0.085,
+    headPitchAmp: 0.055,
+    headSpeed: 0.68,
+    breatheAmp: 0.02,
+    breatheSpeed: 1.24,
+    petalAmp: 0.028,
+    corePulseAmp: 0.15,
+    corePulseSpeed: 1.72,
+    lean: -0.018,
   },
   sleep: {
-    floatAmp: 0.014,
-    floatSpeed: 0.42,
-    swayAmp: 0.018,
-    swaySpeed: 0.24,
-    headYawAmp: 0.012,
-    headPitchAmp: 0.009,
-    headSpeed: 0.24,
-    breatheAmp: 0.014,
-    breatheSpeed: 0.56,
-    petalAmp: 0.006,
-    corePulseAmp: 0.028,
-    corePulseSpeed: 0.7,
-    lean: 0.055,
+    floatAmp: 0.034,
+    floatSpeed: 0.38,
+    swayAmp: 0.03,
+    swaySpeed: 0.21,
+    headYawAmp: 0.025,
+    headPitchAmp: 0.018,
+    headSpeed: 0.22,
+    breatheAmp: 0.022,
+    breatheSpeed: 0.52,
+    petalAmp: 0.01,
+    corePulseAmp: 0.04,
+    corePulseSpeed: 0.64,
+    lean: 0.07,
   },
 };
 
@@ -2204,7 +2204,7 @@ export default function SenModel({
   const cfg = SEN_STATES[state] || SEN_STATES.idle;
   const moodMotion = MOOD_MOTION[state] || MOOD_MOTION.idle;
   const motion = reducedMotion ? 0 : 1;
-  const ambientMotion = reducedMotion ? 0.2 : 1;
+  const ambientMotion = reducedMotion ? 0.35 : 1;
   useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime;
     const interactionNow =
@@ -2263,7 +2263,7 @@ export default function SenModel({
     const ambientScale =
       ambientMotion *
       (focusActive ? 0.72 : 1) *
-      THREE.MathUtils.clamp(presenceCalm, 0.58, 1.12);
+      THREE.MathUtils.clamp(presenceCalm, 0.88, 1.08);
     const ambientFloat =
       Math.sin(t * moodMotion.floatSpeed) *
       moodMotion.floatAmp *
@@ -2292,6 +2292,31 @@ export default function SenModel({
       Math.sin(t * moodMotion.corePulseSpeed) *
         moodMotion.corePulseAmp *
         ambientScale;
+
+    // Slow asymmetric micro-gestures keep Sen feeling alive without looking
+    // like a looping idle animation. Each mood bends the gesture differently.
+    const gesturePulse = Math.pow(
+      Math.max(0, Math.sin(t * 0.36 + 1.1)),
+      6,
+    ) * ambientScale;
+    const gestureDirection =
+      state === "thinking"
+        ? -1
+        : state === "listening"
+          ? 1
+          : state === "success"
+            ? 0.65
+            : state === "sleep"
+              ? -0.35
+              : 0.5;
+    const gestureYaw = gesturePulse * 0.085 * gestureDirection;
+    const gestureTilt =
+      gesturePulse *
+      (state === "working" ? 0.018 : state === "sleep" ? 0.016 : 0.036) *
+      (state === "thinking" ? -1 : 1);
+    const gestureLift =
+      gesturePulse *
+      (state === "success" ? 0.055 : state === "sleep" ? 0.008 : 0.025);
 
     const gazeState =
       state === "sleep" || state === "success"
@@ -2323,12 +2348,22 @@ export default function SenModel({
     root.current.position.y = damp(
       root.current.position.y,
       ambientFloat +
+        gestureLift +
         Math.sin(t * (0.92 + presenceCalm * 0.24)) *
           cfg.bob *
-          0.36 *
+          0.3 *
           hoverControl *
           motion,
-      state === "success" ? 4.8 : state === "sleep" ? 1.8 : 3.2,
+      state === "success" ? 4.6 : state === "sleep" ? 1.7 : 3,
+      delta,
+    );
+    root.current.position.x = damp(
+      root.current.position.x,
+      Math.sin(t * (moodMotion.swaySpeed * 0.72) + 1.2) *
+        moodMotion.swayAmp *
+        0.6 *
+        ambientScale,
+      state === "sleep" ? 1.5 : 2.5,
       delta,
     );
     root.current.rotation.z = damp(
@@ -2375,7 +2410,8 @@ export default function SenModel({
     head.current.position.y = damp(
       head.current.position.y,
       -0.13 * folded +
-        Math.sin(t * 0.27) * 0.014 * autonomous * presenceCalm -
+        Math.sin(t * 0.27) * 0.014 * autonomous * presenceCalm +
+        gestureLift * 0.38 -
         headPat * 0.045 -
         shy * 0.045 +
         quietGaze * 0.02,
@@ -2402,6 +2438,7 @@ export default function SenModel({
         (1 - quietGaze * 0.92) +
         idleLook * 0.45 * (1 - quietGaze) +
         ambientHeadYaw +
+        gestureYaw +
         shy * 0.18,
       headHover ? 6.2 : state === "sleep" ? 1.7 : state === "working" ? 4.8 : 3.6,
       delta,
@@ -2411,6 +2448,7 @@ export default function SenModel({
       0.14 * folded -
         gazeY * (headHover ? 0.105 : 0.082) * emergence +
         ambientHeadPitch +
+        gestureTilt +
         Math.sin(t * 0.13 + 2.2) * 0.008 * autonomous * presenceCalm +
         headPat * 0.075 +
         shy * 0.055 -
