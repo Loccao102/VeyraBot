@@ -1,5 +1,5 @@
-import React, { useLayoutEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -243,8 +243,31 @@ function CrownPetal({ side, index, state, motion, bloom }) {
 function Eyes({ state, motion, bloom }) {
   const ref = useRef();
   const gazeRefs = useRef({});
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const { gl } = useThree();
 
-  useFrame(({ clock, pointer }, delta) => {
+  useEffect(() => {
+    const updatePointer = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+
+      pointerRef.current.x = THREE.MathUtils.clamp(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -1,
+        1,
+      );
+      pointerRef.current.y = THREE.MathUtils.clamp(
+        -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+        -1,
+        1,
+      );
+    };
+
+    window.addEventListener("pointermove", updatePointer, { passive: true });
+    return () => window.removeEventListener("pointermove", updatePointer);
+  }, [gl]);
+
+  useFrame(({ clock }, delta) => {
     const blink =
       motion && Math.sin(clock.elapsedTime * 0.85) > 0.998 ? 0.13 : 1;
     const wakeAmount = bloom
@@ -265,32 +288,26 @@ function Eyes({ state, motion, bloom }) {
       state === "sleep" || state === "success"
         ? 0
         : state === "thinking"
-          ? 0.82
+          ? 0.86
           : 1;
 
+    // Cursor response is interaction feedback, so do not suppress it with
+    // prefers-reduced-motion. Reduced motion only affects ambient animation.
     const targetX =
-      THREE.MathUtils.clamp(pointer.x, -1, 1) *
-      0.052 *
-      motion *
-      wakeAmount *
-      gazeAmount;
+      pointerRef.current.x * 0.044 * wakeAmount * gazeAmount;
     const targetY =
-      THREE.MathUtils.clamp(pointer.y, -1, 1) *
-      0.037 *
-      motion *
-      wakeAmount *
-      gazeAmount;
+      pointerRef.current.y * 0.052 * wakeAmount * gazeAmount;
 
     [-1, 1].forEach((side) => {
       const gaze = gazeRefs.current[side];
       if (!gaze) return;
 
-      gaze.position.x = damp(gaze.position.x, targetX, 12, delta);
-      gaze.position.y = damp(gaze.position.y, targetY, 12, delta);
+      gaze.position.x = damp(gaze.position.x, targetX, 16, delta);
+      gaze.position.y = damp(gaze.position.y, targetY, 16, delta);
       gaze.rotation.z = damp(
         gaze.rotation.z,
-        -pointer.x * 0.035 * side * motion * gazeAmount,
-        9,
+        -pointerRef.current.x * 0.05 * side * gazeAmount,
+        12,
         delta,
       );
     });
