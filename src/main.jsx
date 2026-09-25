@@ -33,6 +33,11 @@ const STATE_LIGHTS = {
   sleep: { color: "#9ab4e8", back: "#b99bd3", intensity: 0.38 },
 };
 
+const IS_DESKTOP_SHELL =
+  typeof window !== "undefined" &&
+  (Boolean(window.__TAURI_INTERNALS__) ||
+    new URLSearchParams(window.location.search).get("desktop") === "1");
+
 const QUICK_COMMANDS = [
   "Continue my project",
   "Check this repo",
@@ -533,6 +538,158 @@ function Scene({
         />
       )}
     </>
+  );
+}
+
+function DesktopApp() {
+  const reducedMotion = useReducedMotion();
+  const presence = usePresence();
+  const {
+    state,
+    setState,
+    command,
+    setCommand,
+    message,
+    isRunning,
+    runCommand,
+    cancel,
+    startVoiceInput,
+  } = useVeyraAgent();
+
+  const current = STATES.find((item) => item[0] === state) ?? STATES[0];
+  const desktopInteraction = useInteractionManager({
+    phase: presence.phase.key,
+    weather: presence.weather.key,
+    state,
+    enabled: !isRunning,
+  });
+
+  return (
+    <main
+      className={`sen-desktop state-${state} time-${presence.phase.key} weather-${presence.weather.key}`}
+    >
+      <section className="desktop-card">
+        <header className="desktop-dragbar" data-tauri-drag-region>
+          <div className="desktop-brand" data-tauri-drag-region>
+            <LotusMark />
+            <div>
+              <strong>Sen</strong>
+              <small>LOTUS COMPANION</small>
+            </div>
+          </div>
+          <div className="desktop-presence" data-tauri-drag-region>
+            <span className={`desktop-state-dot ${state}`} />
+            <span>{current[1]}</span>
+          </div>
+        </header>
+
+        <section className="desktop-stage" aria-label="Sen desktop companion">
+          <div className="desktop-stage-glow" />
+          <SceneBoundary>
+            <Canvas
+              camera={{ position: [0, 0.72, 6.25], fov: 38 }}
+              gl={{ antialias: true, alpha: true }}
+              dpr={[1, 1.4]}
+            >
+              <Scene
+                state={state}
+                energy={82}
+                halo={1.18}
+                core={1.08}
+                hover={1}
+                reducedMotion={reducedMotion}
+                resetKey={0}
+                presence={presence.phase}
+                weather={presence.weather}
+                mood={presence.mood}
+                interaction={desktopInteraction}
+                interactionEnabled={!isRunning}
+                ritual={null}
+                focusActive={false}
+                personal={null}
+              />
+            </Canvas>
+          </SceneBoundary>
+          <div className="desktop-moment">
+            <span>{current[3]}</span>
+            <div>
+              <small>{current[1].toUpperCase()}</small>
+              <p>{message}</p>
+            </div>
+          </div>
+        </section>
+
+        <form
+          className="desktop-command"
+          onSubmit={(event) => {
+            event.preventDefault();
+            runCommand();
+          }}
+        >
+          <button
+            type="button"
+            className="desktop-mic"
+            onClick={startVoiceInput}
+            disabled={isRunning}
+            aria-label="Voice input"
+            title="Voice input"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M6 10v2a6 6 0 0 0 12 0v-2M12 18v4m-4 0h8" />
+            </svg>
+          </button>
+          <input
+            aria-label="Ask Sen"
+            value={command}
+            disabled={isRunning}
+            onChange={(event) => setCommand(event.target.value)}
+            placeholder={
+              isRunning ? "Sen is working…" : "Ask Sen to do something…"
+            }
+          />
+          {isRunning ? (
+            <button
+              type="button"
+              className="desktop-send desktop-cancel"
+              onClick={cancel}
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="desktop-send"
+              disabled={!command.trim()}
+            >
+              ↗
+            </button>
+          )}
+        </form>
+
+        <footer className="desktop-footer">
+          <span>
+            {PRESENCE_ICONS[presence.phase.key]} {presence.phase.label}
+            <i>·</i>
+            {PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}
+          </span>
+          <button
+            type="button"
+            onClick={() => setState(state === "sleep" ? "idle" : "sleep")}
+            disabled={isRunning}
+          >
+            {state === "sleep" ? "Wake Sen" : "Let Sen rest"}
+          </button>
+          <kbd>Ctrl ⇧ Space</kbd>
+        </footer>
+      </section>
+    </main>
   );
 }
 
@@ -1060,6 +1217,6 @@ const root = import.meta.hot?.data.root ?? createRoot(document.getElementById("r
 if (import.meta.hot) import.meta.hot.data.root = root;
 root.render(
   <React.StrictMode>
-    <App />
+    {IS_DESKTOP_SHELL ? <DesktopApp /> : <App />}
   </React.StrictMode>,
 );
