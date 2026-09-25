@@ -242,6 +242,8 @@ function CrownPetal({ side, index, state, motion, bloom }) {
 
 function Eyes({ state, motion, bloom }) {
   const ref = useRef();
+  const gazeRefs = useRef({});
+
   useFrame(({ clock, pointer }, delta) => {
     const blink =
       motion && Math.sin(clock.elapsedTime * 0.85) > 0.998 ? 0.13 : 1;
@@ -249,6 +251,7 @@ function Eyes({ state, motion, bloom }) {
       ? THREE.MathUtils.smoothstep(bloom.current, 0.6, 0.72)
       : 1;
     const restAmount = state === "sleep" ? 0.08 : Math.max(0.08, wakeAmount);
+
     ref.current.scale.y = damp(
       ref.current.scale.y,
       (state === "thinking" ? 0.85 : state === "listening" ? 1.1 : 1) *
@@ -257,13 +260,42 @@ function Eyes({ state, motion, bloom }) {
       18,
       delta,
     );
-    ref.current.position.x = damp(
-      ref.current.position.x,
-      pointer.x * 0.035 * motion,
-      5,
-      delta,
-    );
+
+    const gazeAmount =
+      state === "sleep" || state === "success"
+        ? 0
+        : state === "thinking"
+          ? 0.82
+          : 1;
+
+    const targetX =
+      THREE.MathUtils.clamp(pointer.x, -1, 1) *
+      0.052 *
+      motion *
+      wakeAmount *
+      gazeAmount;
+    const targetY =
+      THREE.MathUtils.clamp(pointer.y, -1, 1) *
+      0.037 *
+      motion *
+      wakeAmount *
+      gazeAmount;
+
+    [-1, 1].forEach((side) => {
+      const gaze = gazeRefs.current[side];
+      if (!gaze) return;
+
+      gaze.position.x = damp(gaze.position.x, targetX, 12, delta);
+      gaze.position.y = damp(gaze.position.y, targetY, 12, delta);
+      gaze.rotation.z = damp(
+        gaze.rotation.z,
+        -pointer.x * 0.035 * side * motion * gazeAmount,
+        9,
+        delta,
+      );
+    });
   });
+
   return (
     <group position={[0, 0.84, 0.585]}>
       <group ref={ref}>
@@ -288,29 +320,37 @@ function Eyes({ state, motion, bloom }) {
                   <sphereGeometry args={[1, 24, 16]} />
                   <meshBasicMaterial color="#77505a" />
                 </mesh>
-                <mesh
-                  position={[0.008, -0.028, 0.033]}
-                  scale={[0.056, 0.072, 0.009]}
+
+                <group
+                  ref={(node) => {
+                    gazeRefs.current[side] = node;
+                  }}
                 >
-                  <sphereGeometry args={[1, 20, 12]} />
-                  <meshBasicMaterial color="#b77d80" />
-                </mesh>
-                <mesh
-                  position={[-0.024, 0.044, 0.036]}
-                  scale={[0.028, 0.033, 0.009]}
-                >
-                  <sphereGeometry args={[1, 12, 8]} />
-                  <meshBasicMaterial color="#fff9ef" />
-                </mesh>
-                <mesh
-                  position={[0.027, -0.067, 0.043]}
-                  scale={[0.012, 0.014, 0.006]}
-                >
-                  <sphereGeometry args={[1, 10, 8]} />
-                  <meshBasicMaterial color="#ffe5ca" />
-                </mesh>
+                  <mesh
+                    position={[0.008, -0.028, 0.033]}
+                    scale={[0.056, 0.072, 0.009]}
+                  >
+                    <sphereGeometry args={[1, 20, 12]} />
+                    <meshBasicMaterial color="#b77d80" />
+                  </mesh>
+                  <mesh
+                    position={[-0.024, 0.044, 0.036]}
+                    scale={[0.028, 0.033, 0.009]}
+                  >
+                    <sphereGeometry args={[1, 12, 8]} />
+                    <meshBasicMaterial color="#fff9ef" />
+                  </mesh>
+                  <mesh
+                    position={[0.027, -0.067, 0.043]}
+                    scale={[0.012, 0.014, 0.006]}
+                  >
+                    <sphereGeometry args={[1, 10, 8]} />
+                    <meshBasicMaterial color="#ffe5ca" />
+                  </mesh>
+                </group>
               </>
             )}
+
             <Line
               points={[
                 [
@@ -327,6 +367,7 @@ function Eyes({ state, motion, bloom }) {
           </group>
         ))}
       </group>
+
       {[-1, 1].map((side) => (
         <mesh
           key={side}
