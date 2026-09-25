@@ -444,20 +444,19 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
   const gazeRefs = useRef({});
   const eyeShapeRefs = useRef({});
   const lidRefs = useRef({});
-  const blinkAmount = useRef(state === "sleep" ? 0.94 : 0);
-  const blinkMode = useRef("open");
-  const blinkTimer = useRef(randomBetween(1.2, 2.0));
+  const blinkAmount = useRef(state === "sleep" ? 1 : 0);
+  const blinkMode = useRef(state === "sleep" ? "closed" : "open");
+  const blinkTimer = useRef(randomBetween(0.8, 1.2));
   const doubleBlinkPending = useRef(false);
 
   useEffect(() => {
-    blinkAmount.current = state === "sleep" ? 0.94 : 0;
-    blinkMode.current = "open";
-    blinkTimer.current = state === "sleep" ? 999 : randomBetween(1.15, 1.95);
+    blinkAmount.current = state === "sleep" ? 1 : 0;
+    blinkMode.current = state === "sleep" ? "closed" : "open";
+    blinkTimer.current = state === "sleep" ? 999 : randomBetween(0.8, 1.2);
     doubleBlinkPending.current = false;
   }, [state]);
 
   useFrame(({ clock }, delta) => {
-    const t = clock.elapsedTime;
     const config = MOOD_MOTION[state] || MOOD_MOTION.idle;
     const wakeAmount = bloom
       ? THREE.MathUtils.smoothstep(bloom.current, 0.6, 0.72)
@@ -466,24 +465,25 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     let targetBlink = 0;
 
     if (state === "sleep") {
-      // Sleep keeps the eyelids almost shut, but a tiny slow variation prevents
-      // the face from looking frozen.
-      targetBlink = 0.94 + Math.sin(t * 0.42) * 0.025;
+      targetBlink = 1;
+      blinkMode.current = "closed";
     } else if (state === "success") {
       targetBlink = 0;
-    } else if (motion) {
+    } else {
+      // Blink is a facial life cue, not a large motion effect. Keep it active
+      // even when prefers-reduced-motion is enabled.
       blinkTimer.current -= delta;
 
       if (blinkTimer.current <= 0) {
         if (blinkMode.current === "open") {
           blinkMode.current = "closed";
-          blinkTimer.current = config.blinkDuration;
+          blinkTimer.current = Math.max(0.18, config.blinkDuration);
           doubleBlinkPending.current = Math.random() < 0.24;
         } else {
           blinkMode.current = "open";
 
           if (doubleBlinkPending.current) {
-            blinkTimer.current = randomBetween(0.1, 0.17);
+            blinkTimer.current = randomBetween(0.1, 0.16);
             doubleBlinkPending.current = false;
           } else {
             blinkTimer.current = randomBetween(
@@ -500,7 +500,7 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     blinkAmount.current = damp(
       blinkAmount.current,
       targetBlink,
-      targetBlink > blinkAmount.current ? 34 : 20,
+      targetBlink > blinkAmount.current ? 42 : 24,
       delta,
     );
 
@@ -509,12 +509,13 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     const restAmount =
       state === "sleep" ? 1 : Math.max(0.08, wakeAmount);
     const eyeScaleY =
-      THREE.MathUtils.lerp(moodEyeScale, 0.035, blinkAmount.current) *
+      THREE.MathUtils.lerp(moodEyeScale, 0.04, blinkAmount.current) *
       restAmount;
-    const lidOpacity =
-      state === "sleep"
-        ? 0.92
-        : THREE.MathUtils.smoothstep(blinkAmount.current, 0.45, 0.9);
+
+    const forceClosed =
+      state === "sleep" ||
+      blinkMode.current === "closed" ||
+      blinkAmount.current > 0.52;
 
     [-1, 1].forEach((side) => {
       const eyeShape = eyeShapeRefs.current[side];
@@ -522,20 +523,17 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
         eyeShape.scale.y = damp(
           eyeShape.scale.y,
           eyeScaleY,
-          state === "sleep" ? 10 : 28,
+          state === "sleep" ? 12 : 34,
           delta,
         );
+        // Once the blink crosses halfway, switch to an explicit closed-eye
+        // silhouette so it cannot read as merely "smaller eyes".
+        eyeShape.visible = !forceClosed;
       }
 
       const lid = lidRefs.current[side];
-      if (lid?.material) {
-        lid.material.opacity = damp(
-          lid.material.opacity,
-          lidOpacity,
-          state === "sleep" ? 10 : 30,
-          delta,
-        );
-        lid.visible = lid.material.opacity > 0.02;
+      if (lid) {
+        lid.visible = forceClosed;
       }
     });
 
@@ -633,16 +631,19 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
                   lidRefs.current[side] = node;
                 }}
                 points={[
-                  [-0.088, 0.005, 0.05],
-                  [-0.044, -0.034, 0.055],
-                  [0, -0.048, 0.058],
-                  [0.044, -0.034, 0.055],
-                  [0.088, 0.005, 0.05],
+                  [-0.092, 0.01, 0.078],
+                  [-0.06, -0.018, 0.08],
+                  [-0.03, -0.034, 0.082],
+                  [0, -0.04, 0.083],
+                  [0.03, -0.034, 0.082],
+                  [0.06, -0.018, 0.08],
+                  [0.092, 0.01, 0.078],
                 ]}
-                color="#77505a"
-                lineWidth={4.2}
+                color="#6f4653"
+                lineWidth={6.5}
                 transparent
-                opacity={0}
+                opacity={0.98}
+                visible={state === "sleep"}
               />
             </>
           )}
