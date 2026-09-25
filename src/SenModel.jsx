@@ -1665,7 +1665,7 @@ function SleepEffect({ motion, strength = 1 }) {
   );
 }
 
-function DiscoveryEffect(function DiscoveryEffect({ reaction, reducedMotion }) {
+function DiscoveryEffect({ reaction, reducedMotion }) {
   const ref = useRef();
   const type = reaction?.type ?? "none";
   const active =
