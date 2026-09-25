@@ -16,6 +16,8 @@ const REACTION_COPY = {
   secret_pond_chorus: "The pond answers in chorus.",
   secret_night_fireflies: "The night answered Sen’s light.",
   secret_quiet_gaze: "Sen noticed the quiet.",
+  ritual_thought: "Your thought found a place to rest.",
+  ritual_focus_complete: "A quiet moment, completed.",
 };
 
 const DISCOVERY_NAMES = {
@@ -307,6 +309,29 @@ export default function useInteractionManager({
     rippleTimers.current.add(timer);
   }, []);
 
+  const celebrateThought = useCallback(() => {
+    if (!enabled) return false;
+    markActivity();
+    return trigger("ritual_thought", {
+      target: "garden",
+      intensity: 1,
+      duration: 1800,
+      cooldown: 0,
+      force: true,
+    });
+  }, [enabled, markActivity, trigger]);
+
+  const celebrateFocus = useCallback(() => {
+    markActivity();
+    return trigger("ritual_focus_complete", {
+      target: "garden",
+      intensity: 1,
+      duration: 2600,
+      cooldown: 0,
+      force: true,
+    });
+  }, [markActivity, trigger]);
+
   const touchWater = useCallback(
     (position) => {
       if (!enabled) return false;
@@ -412,6 +437,8 @@ export default function useInteractionManager({
     beginCoreHold,
     endCoreHold,
     touchWater,
+    celebrateThought,
+    celebrateFocus,
     clearReaction,
   };
 }
