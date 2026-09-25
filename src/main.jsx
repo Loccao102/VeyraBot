@@ -1,6 +1,6 @@
 import React, { Component, Suspense, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   ContactShadows,
   OrbitControls,
@@ -270,18 +270,18 @@ function FocusHUD({ focus, onTogglePause, onExit }) {
     <div className="focus-hud" aria-live="polite">
       <div className="focus-hud-brand">
         <LotusMark />
-        <span>STAY WITH SEN</span>
+        <span>Stay with Sen</span>
       </div>
       <div className="focus-clock">
         <strong>{formatFocusTime(focus.remainingMs)}</strong>
-        <span>{focus.paused ? "A quiet pause." : "Nothing else needs you right now."}</span>
+        <span>{focus.paused ? "Paused" : "Quiet focus"}</span>
       </div>
       <div className="focus-actions">
         <button type="button" onClick={onTogglePause}>
           {focus.paused ? "Continue" : "Pause"}
         </button>
         <button type="button" onClick={onExit}>
-          Leave focus
+          Exit
         </button>
       </div>
     </div>
@@ -303,6 +303,21 @@ class SceneBoundary extends Component {
       this.props.children
     );
   }
+}
+
+function FocusCamera({ active, reducedMotion }) {
+  useFrame(({ camera }, delta) => {
+    if (!active) return;
+
+    const speed = reducedMotion ? 14 : 5.5;
+    const alpha = 1 - Math.exp(-delta * speed);
+    camera.position.x += (0 - camera.position.x) * alpha;
+    camera.position.y += (0.5 - camera.position.y) * alpha;
+    camera.position.z += (5.75 - camera.position.z) * alpha;
+    camera.lookAt(0, 0.02, 0);
+  });
+
+  return null;
 }
 
 function Scene({
@@ -329,6 +344,7 @@ function Scene({
         reducedMotion={reducedMotion}
         sleeping={state === "sleep"}
       />
+      <FocusCamera active={focusActive} reducedMotion={reducedMotion} />
       <Suspense
         fallback={
           <Html center>
@@ -536,48 +552,36 @@ function App() {
           <div className="scene-topline">
             <span>THE LOTUS GARDEN</span>
             <span>✧</span>
-            <span className="presence-label">
-              {presence.phase.label} · {presence.weather.label}
-            </span>
           </div>
-          <div className="presence-status-chip" aria-live="polite">
-            <span className="presence-status-icon" aria-hidden="true">
-              {PRESENCE_ICONS[presence.phase.key]}
+          <div className="garden-statusbar" aria-live="polite">
+            <span className="garden-status-presence">
+              <i aria-hidden="true">{PRESENCE_ICONS[presence.phase.key]}</i>
+              <b>{presence.phase.label}</b>
+              <em>{PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}</em>
             </span>
-            <strong>{presence.phase.label}</strong>
-            <span className="presence-status-separator">·</span>
-            <span className="presence-status-weather">
-              {PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}
+            <span className="garden-status-divider" />
+            <span className="garden-status-play">
+              P2 <b>{interaction.discoveryCount}/{interaction.discoveryTotal}</b>
             </span>
-            <span className="presence-status-separator">·</span>
-            <span className="presence-status-mood">{presence.mood.label}</span>
           </div>
           <div
-            className={`interaction-hint ${
-              interaction.reaction.type !== "none" ? "active" : ""
-            } ${
-              interaction.reaction.discoveryId ? "discovery-found" : ""
-            }`}
+            className={`interaction-toast ${
+              interaction.reaction.type !== "none" || interaction.hoveredTarget
+                ? "visible"
+                : ""
+            } ${interaction.reaction.discoveryId ? "discovery-found" : ""}`}
             aria-live="polite"
           >
-            <span>
-              P2 · PLAY
-              <b>
-                {interaction.discoveryCount}/{interaction.discoveryTotal}
-              </b>
-            </span>
-            <strong>
-              {interaction.reaction.discoveryId
-                ? `✧ ${interaction.reaction.label}`
-                : interaction.reaction.label ||
-                  (interaction.hoveredTarget === "core"
-                    ? "Hold Sen’s inner light."
-                    : interaction.hoveredTarget?.startsWith("petal:")
-                      ? "This petal is listening."
-                      : interaction.hoveredTarget === "head"
-                        ? "Sen is looking back."
-                        : "Touch. Stay. Notice what Sen remembers.")}
-            </strong>
+            {interaction.reaction.discoveryId
+              ? `✧ ${interaction.reaction.label}`
+              : interaction.reaction.label ||
+                (interaction.hoveredTarget === "core"
+                  ? "Hold Sen’s inner light."
+                  : interaction.hoveredTarget?.startsWith("petal:")
+                    ? "A petal is listening."
+                    : interaction.hoveredTarget === "head"
+                      ? "Sen is looking back."
+                      : "")}
           </div>
           <div className="canvas-wrap">
             <SceneBoundary>
@@ -621,16 +625,20 @@ function App() {
             <span>{current[2]}</span>
             <span className="caption-line" />
           </div>
-          <div className="scene-tools">
-            <span>Drag gently to look around</span>
+          <div className="scene-tools" aria-label="Garden controls">
             <button
               type="button"
-              onClick={() => setPresenceLabOpen((value) => !value)}
+              className={presenceLabOpen ? "active" : ""}
+              onClick={() => {
+                setRitualPanelOpen(false);
+                setPresenceLabOpen((value) => !value);
+              }}
             >
-              Presence preview
+              Presence
             </button>
             <button
               type="button"
+              className={ritualPanelOpen ? "active" : ""}
               onClick={() => {
                 setPresenceLabOpen(false);
                 setRitualPanelOpen((value) => !value);
@@ -638,8 +646,8 @@ function App() {
             >
               Rituals
             </button>
-            <button onClick={() => setResetKey((k) => k + 1)}>
-              Reset view ↺
+            <button type="button" onClick={() => setResetKey((k) => k + 1)}>
+              Reset
             </button>
           </div>
           {presenceLabOpen && (
