@@ -41,6 +41,7 @@ function defaultProfile() {
     focusSessions: 0,
     discoveries: [],
     captures: 0,
+    nightVisitDays: [],
   };
 }
 
@@ -55,6 +56,9 @@ function readProfile() {
       seed: parsed.seed || createSeed(),
       visitDays: Array.isArray(parsed.visitDays) ? parsed.visitDays.slice(-90) : [],
       discoveries: Array.isArray(parsed.discoveries) ? parsed.discoveries : [],
+      nightVisitDays: Array.isArray(parsed.nightVisitDays)
+        ? parsed.nightVisitDays.slice(-90)
+        : [],
     };
   } catch {
     return defaultProfile();
@@ -117,6 +121,47 @@ function getScore(profile) {
   );
 }
 
+function getAffinities(profile) {
+  const raw = {
+    focus: profile.focusMinutes / 25 + profile.focusSessions * 0.65,
+    reflection: profile.thoughtsPlaced * 1.35,
+    explorer: profile.discoveries.length * 2.1 + profile.captures * 0.55,
+    nocturne: profile.nightVisitDays.length * 1.65,
+  };
+
+  const entries = Object.entries(raw).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, entries[0]?.[1] ?? 1);
+  const normalized = Object.fromEntries(
+    Object.entries(raw).map(([key, value]) => [key, Math.min(1, value / max)]),
+  );
+
+  const [first, second] = entries;
+  const close =
+    first && second && first[1] > 0 && second[1] / first[1] >= 0.82;
+  const dominant =
+    !first || first[1] < 1.25
+      ? "young"
+      : close
+        ? "balanced"
+        : first[0];
+
+  const labels = {
+    young: "Young Garden",
+    balanced: "Balanced Garden",
+    focus: "Stillwater Garden",
+    reflection: "Memory Bloom",
+    explorer: "Wandering Light",
+    nocturne: "Moonlit Garden",
+  };
+
+  return {
+    raw,
+    normalized,
+    dominant,
+    label: labels[dominant],
+  };
+}
+
 function getLevelInfo(score) {
   let current = LEVELS[0];
   for (const item of LEVELS) {
@@ -135,7 +180,10 @@ function getLevelInfo(score) {
   return { ...current, next, progress };
 }
 
-export default function usePersonalGarden({ existingThoughts = 0 } = {}) {
+export default function usePersonalGarden({
+  existingThoughts = 0,
+  currentPhase = null,
+} = {}) {
   const [profile, setProfile] = useState(readProfile);
   const migratedThoughtsRef = useRef(false);
 
@@ -175,6 +223,19 @@ export default function usePersonalGarden({ existingThoughts = 0 } = {}) {
       // Ignore session storage failures.
     }
   }, []);
+
+  useEffect(() => {
+    if (currentPhase !== "night") return;
+    const today = dayKey();
+    setProfile((current) => {
+      if (current.nightVisitDays.includes(today)) return current;
+      return {
+        ...current,
+        nightVisitDays: [...current.nightVisitDays, today].slice(-90),
+        lastSeenAt: Date.now(),
+      };
+    });
+  }, [currentPhase]);
 
   useEffect(() => {
     if (migratedThoughtsRef.current) return;
@@ -228,6 +289,7 @@ export default function usePersonalGarden({ existingThoughts = 0 } = {}) {
   const dna = useMemo(() => createDNA(profile.seed), [profile.seed]);
   const score = useMemo(() => getScore(profile), [profile]);
   const levelInfo = useMemo(() => getLevelInfo(score), [score]);
+  const affinities = useMemo(() => getAffinities(profile), [profile]);
   const ageDays = Math.max(
     1,
     Math.floor((Date.now() - profile.createdAt) / 86_400_000) + 1,
@@ -246,6 +308,9 @@ export default function usePersonalGarden({ existingThoughts = 0 } = {}) {
     ),
     ageDays,
     discoveryCount: profile.discoveries.length,
+    affinities,
+    gardenStyle: affinities.dominant,
+    gardenStyleLabel: affinities.label,
     registerThought,
     registerFocus,
     registerDiscovery,
