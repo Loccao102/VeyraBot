@@ -374,6 +374,58 @@ function lotusLayerPoint(t, u, openness, cfg, twistSign) {
   return new THREE.Vector3(u * width + twist, y, radial);
 }
 
+const LOTUS_MORPH_STAGES = [0, 0.28, 0.66, 1];
+const lotusResourceCache = new Map();
+
+function getLotusPetalResources(layer, twistSign) {
+  const key = `${layer.key}:${twistSign}`;
+  if (lotusResourceCache.has(key)) return lotusResourceCache.get(key);
+
+  const geometries = LOTUS_MORPH_STAGES.map((openness) =>
+    surfaceGeometry((t, u) =>
+      lotusLayerPoint(t, u, openness, layer, twistSign),
+    ),
+  );
+  const geometry = geometries[0];
+  geometry.morphAttributes.position = geometries
+    .slice(1)
+    .map((geometryStage) => geometryStage.attributes.position);
+  geometry.morphAttributes.normal = geometries
+    .slice(1)
+    .map((geometryStage) => geometryStage.attributes.normal);
+  geometries.slice(1).forEach((geometryStage) => geometryStage.dispose());
+
+  const edges = LOTUS_MORPH_STAGES.map((openness) => [
+    ...Array.from({ length: 33 }, (_, i) =>
+      lotusLayerPoint(i / 32, -1, openness, layer, twistSign),
+    ),
+    ...Array.from({ length: 33 }, (_, i) =>
+      lotusLayerPoint(1 - i / 32, 1, openness, layer, twistSign),
+    ),
+  ]);
+
+  const material = new THREE.MeshPhysicalMaterial({
+    color: layer.color,
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    metalness: 0.04,
+    roughness: 0.48,
+    clearcoat: 0.28,
+    clearcoatRoughness: 0.36,
+    iridescence: 0.06,
+    iridescenceIOR: 1.3,
+    emissive: new THREE.Color("#5c2135"),
+    emissiveIntensity: 0.026,
+    sheen: 0.16,
+    sheenColor: new THREE.Color("#ffdbe4"),
+    sheenRoughness: 0.72,
+  });
+
+  const resources = { geometry, edges, material };
+  lotusResourceCache.set(key, resources);
+  return resources;
+}
+
 function LotusBloomPetal({
   layer,
   layerIndex,
@@ -391,37 +443,10 @@ function LotusBloomPetal({
     (layerIndex % 2 ? Math.PI / layer.count : 0);
   const twistSign = (index + layerIndex) % 2 ? -1 : 1;
 
-  const stages = useMemo(() => [0, 0.28, 0.66, 1], []);
-  const geometry = useMemo(() => {
-    const geometries = stages.map((openness) =>
-      surfaceGeometry((t, u) =>
-        lotusLayerPoint(t, u, openness, layer, twistSign),
-      ),
-    );
-    const base = geometries[0];
-    base.morphAttributes.position = geometries
-      .slice(1)
-      .map((geometryStage) => geometryStage.attributes.position);
-    base.morphAttributes.normal = geometries
-      .slice(1)
-      .map((geometryStage) => geometryStage.attributes.normal);
-    geometries.slice(1).forEach((geometryStage) => geometryStage.dispose());
-    return base;
-  }, [index, layer, stages, twistSign]);
-
-  const edges = useMemo(
-    () =>
-      stages.map((openness) => [
-        ...Array.from({ length: 33 }, (_, i) =>
-          lotusLayerPoint(i / 32, -1, openness, layer, twistSign),
-        ),
-        ...Array.from({ length: 33 }, (_, i) =>
-          lotusLayerPoint(1 - i / 32, 1, openness, layer, twistSign),
-        ),
-      ]),
-    [layer, stages, twistSign],
+  const { geometry, edges, material } = useMemo(
+    () => getLotusPetalResources(layer, twistSign),
+    [layer, twistSign],
   );
-
   const linePositions = useMemo(
     () => new Float32Array(edges[0].length * 3),
     [edges],
@@ -530,21 +555,7 @@ function LotusBloomPetal({
   return (
     <group position={[0, -1.03, 0]} rotation={[0, angle, 0]}>
       <group ref={motionRef}>
-        <mesh ref={meshRef} geometry={geometry}>
-          <meshPhysicalMaterial
-            color={layer.color}
-            vertexColors
-            side={THREE.DoubleSide}
-            metalness={0.05}
-            roughness={0.46}
-            clearcoat={0.34}
-            clearcoatRoughness={0.34}
-            iridescence={0.08}
-            iridescenceIOR={1.3}
-            emissive="#5c2135"
-            emissiveIntensity={0.028}
-          />
-        </mesh>
+        <mesh ref={meshRef} geometry={geometry} material={material} />
         <Line
           ref={edgeRef}
           points={edges[0]}
@@ -586,12 +597,15 @@ function Ripples({ state, motion }) {
   );
 }
 
-function FloatingPetals({ state, speed, motion }) {
+function FloatingPetals({ state, speed, motion, bloom }) {
   const ref = useRef();
   const phase = useRef(0);
   useFrame(({ clock }, delta) => {
     phase.current +=
       delta * 0.12 * speed * motion * (state === "working" ? 0.18 : 1);
+    const reveal = THREE.MathUtils.smoothstep(bloom.current, 0.38, 0.7);
+    ref.current.visible = reveal > 0.01;
+    ref.current.scale.setScalar(reveal);
     ref.current.rotation.y = phase.current;
     ref.current.children.forEach((child, i) => {
       child.position.y =
@@ -643,11 +657,22 @@ export default function SenModel({
     root.current.position.y =
       Math.sin(t * 1.3) * cfg.bob * hoverControl * motion;
     const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.12, 0.72);
-    awake.current.scale.setScalar(0.98 + 0.02 * emergence);
-    awake.current.position.y = -0.28 * (1 - emergence);
+    const folded = 1 - emergence;
+    awake.current.scale.set(
+      0.94 + 0.06 * emergence,
+      0.98 + 0.02 * emergence,
+      0.94 + 0.06 * emergence,
+    );
+    awake.current.position.y = -0.34 * folded;
     awake.current.rotation.x = damp(
       awake.current.rotation.x,
-      0.05 * (1 - emergence),
+      0.075 * folded,
+      3,
+      delta,
+    );
+    head.current.position.y = damp(
+      head.current.position.y,
+      -0.13 * folded,
       3,
       delta,
     );
@@ -665,7 +690,7 @@ export default function SenModel({
     );
     head.current.rotation.x = damp(
       head.current.rotation.x,
-      -pointer.y * 0.045 * motion,
+      0.14 * folded - pointer.y * 0.045 * motion * emergence,
       3,
       delta,
     );
@@ -798,7 +823,12 @@ export default function SenModel({
           color={GOLD}
           lineWidth={1.3}
         />
-        <FloatingPetals state={state} speed={haloControl} motion={motion} />
+        <FloatingPetals
+          state={state}
+          speed={haloControl}
+          motion={motion}
+          bloom={bloom}
+        />
         {state === "working" &&
           [-1, 1].map((side) => (
             <group
