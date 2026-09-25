@@ -3608,3 +3608,421 @@ em {
     width: 100%;
   }
 }
+
+
+/* Night contrast rescue ---------------------------------------------------- */
+.app-shell.time-night {
+  --ink: #f3ebf4;
+  --muted: #c4b6c8;
+  --line: #8d7f9152;
+  --green: #a8c7b1;
+  --presence-glow: #9b82d536;
+  --presence-wash: #17131f;
+  --presence-moon-a: #f5eaff;
+  --presence-moon-b: #9d83d787;
+  --presence-moon-c: #3a2d4ee8;
+  color: #f3ebf4;
+  background:
+    radial-gradient(ellipse at 50% 34%, #765f9a42, transparent 44%),
+    radial-gradient(circle at 18% 72%, #42615a1b, transparent 34%),
+    linear-gradient(180deg, #231c2b 0%, #19151f 58%, #141118 100%);
+}
+
+.time-night .topbar {
+  border-bottom-color: #9b8ba04a;
+}
+
+.time-night .brand strong {
+  color: #f4edf3;
+}
+
+.time-night .brand > span,
+.time-night .edition,
+.time-night .edition-number {
+  color: #b9abbf;
+}
+
+.time-night .brand svg {
+  color: #d796ad;
+}
+
+.time-night .online-dot {
+  background: #91b49d;
+  box-shadow: 0 0 10px #91b49d66;
+}
+
+.time-night .intro-kicker,
+.time-night .states-heading h2,
+.time-night .states-heading > span {
+  color: #c7b7c8;
+}
+
+.time-night .intro-panel h1 {
+  color: #f4edf4;
+}
+
+.time-night .intro-panel em,
+.time-night .intro-panel .vietnamese-note {
+  color: #e0a0b9;
+}
+
+.time-night .states-heading {
+  border-bottom-color: #8b7f9054;
+}
+
+.time-night .state-btn {
+  color: #cfc2cd;
+}
+
+.time-night .state-btn:hover {
+  background: #6e61732e;
+}
+
+.time-night .state-btn.active {
+  background: #7c657252;
+  box-shadow:
+    inset 0 0 0 1px #d6a8ba4d,
+    0 8px 24px #0c091022;
+  color: #ffe9f2;
+}
+
+.time-night .state-glyph {
+  background: #6d63724f;
+  color: #d6c4d1;
+}
+
+.time-night .state-btn.active .state-glyph {
+  background: #9a728360;
+  color: #ffeaf2;
+  box-shadow: 0 0 18px #d79aac2a;
+}
+
+.time-night .state-number {
+  color: #9d90a2;
+}
+
+.time-night .garden {
+  border-color: #9a8ca568;
+  background:
+    radial-gradient(circle at 50% 42%, #8d78bc31 0%, #4b3e6022 34%, transparent 58%),
+    radial-gradient(circle at 50% 88%, #d792ac17, transparent 33%),
+    linear-gradient(180deg, #2a2234 0%, #211b2a 54%, #18151e 100%);
+  box-shadow:
+    0 34px 100px #08060d4a,
+    inset 0 1px 0 #ffffff18,
+    inset 0 -80px 120px #0d091329;
+}
+
+.time-night .garden::before {
+  background:
+    radial-gradient(circle at 50% 52%, #bd9ee41a, transparent 32%),
+    linear-gradient(90deg, transparent, #d9c6e109 50%, transparent);
+}
+
+.time-night .garden-moon {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 47% 40%,
+    #f6ebff 0%,
+    #b39bdf9c 40%,
+    #6f5b9166 67%,
+    #35294420 100%
+  );
+  box-shadow:
+    0 0 80px #c0a8f060,
+    0 0 170px #8b72c53d,
+    inset 0 0 72px #fff8ff24;
+}
+
+.time-night .garden-ring {
+  opacity: 0.84;
+  border-color: #c4addc6b;
+  box-shadow:
+    0 0 42px #9e86c528,
+    inset 0 0 50px #7d679c18;
+}
+
+.time-night .garden-ring::before,
+.time-night .garden-ring::after {
+  color: #e2c987;
+  text-shadow: 0 0 12px #e2c98788;
+}
+
+.time-night .scene-topline,
+.time-night .scene-presence,
+.time-night .scene-discoveries {
+  color: #d5c7d8;
+}
+
+.time-night .scene-caption {
+  color: #d7c8d4;
+  opacity: 0.82;
+}
+
+.time-night .scene-caption .caption-line {
+  background: #b7a8bd73;
+}
+
+.time-night .interaction-toast {
+  border-color: #b7a7bb5c;
+  background: #33293ddc;
+  color: #f2e8ef;
+  box-shadow:
+    0 10px 30px #06040942,
+    0 0 28px #b791c01a;
+}
+
+.time-night .scene-tools {
+  border-color: #a996ae57;
+  background: #2f2739d6;
+  box-shadow: 0 10px 30px #07050b3b;
+}
+
+.time-night .scene-tools button {
+  color: #d6c8d5;
+}
+
+.time-night .scene-tools button:hover,
+.time-night .scene-tools button.active {
+  background: #735e735e;
+  color: #fff0f6;
+}
+
+.time-night .detail-head {
+  border-bottom-color: #8b7e8e66;
+}
+
+.time-night .detail-head strong,
+.time-night .control-panel label > span strong {
+  color: #f0e7ef;
+}
+
+.time-night .detail-head small,
+.time-night .control-panel label > span small {
+  color: #bcaec1;
+}
+
+.time-night .mini-palette i {
+  border-color: #ffffff66;
+  box-shadow: 0 0 0 1px #a99cac;
+}
+
+.time-night .control-panel label {
+  border-bottom-color: #82758666;
+}
+
+.time-night .control-panel b {
+  background: #6f63755f;
+  color: #f1e6ee;
+}
+
+.time-night .control-panel input {
+  background:
+    linear-gradient(
+      90deg,
+      #d28da5 0 var(--control-level),
+      #756a786e var(--control-level) 100%
+    );
+}
+
+.time-night .rest-toggle {
+  background: #6b60705c;
+  color: #f0e8ee;
+}
+
+.time-night .rest-toggle:hover,
+.time-night .rest-toggle.active {
+  background: #836d7d73;
+  color: #fff0f6;
+}
+
+.time-night .rest-toggle > span:first-child {
+  background: #8b799066;
+  color: #ffeaf4;
+}
+
+.time-night .rest-toggle small {
+  color: #c6b8c5;
+}
+
+.time-night .energy-panel,
+.time-night .agent-panel {
+  border-color: #8d809052;
+  background: #292230b8;
+  box-shadow: 0 16px 44px #08060d30;
+}
+
+.time-night .energy-heading label,
+.time-night .energy-heading output,
+.time-night .agent-status p {
+  color: #f0e6ee;
+}
+
+.time-night .energy-heading div > span,
+.time-night .energy-footer > span,
+.time-night .energy-panel > p,
+.time-night .agent-status small,
+.time-night .history-row p {
+  color: #bdafbf;
+}
+
+.time-night .energy-panel > input {
+  accent-color: #d28da5;
+}
+
+.time-night .energy-footer button,
+.time-night .quick-commands button {
+  border-color: #8e80925c;
+  background: #6d607057;
+  color: #eee4ec;
+}
+
+.time-night .command-dock {
+  border-color: #897b8d61;
+  background: #211b28d6;
+}
+
+.time-night .command-dock input {
+  color: #f3eaf1;
+}
+
+.time-night .command-dock input::placeholder {
+  color: #9f92a3;
+}
+
+.time-night .bottombar {
+  border-top-color: #8e819150;
+  color: #aa9daf;
+}
+
+.time-night .bottombar > span:nth-child(2) {
+  color: #bbaebe;
+}
+
+/* Floating panels must belong to the night scene instead of glowing white. */
+.time-night .presence-lab,
+.time-night .ritual-panel,
+.time-night .personal-panel,
+.time-night .thought-card {
+  border-color: #ac9db060;
+  background: #2b2433eb;
+  color: #f1e8ef;
+  box-shadow:
+    0 28px 80px #05030859,
+    0 0 0 1px #ffffff05 inset;
+  backdrop-filter: blur(22px);
+}
+
+.time-night .presence-lab {
+  width: min(360px, calc(100% - 28px));
+  max-height: min(470px, calc(100% - 70px));
+  overflow-y: auto;
+}
+
+.time-night .presence-lab-head,
+.time-night .ritual-panel-head,
+.time-night .personal-panel-head,
+.time-night .personal-stats,
+.time-night .personal-affinity,
+.time-night .personal-dna {
+  border-color: #8b7e9061;
+}
+
+.time-night .presence-lab-head strong,
+.time-night .ritual-panel-head strong,
+.time-night .ritual-item-title strong,
+.time-night .personal-panel-head strong,
+.time-night .personal-affinity-head strong,
+.time-night .personal-stats strong,
+.time-night .personal-unlocks p,
+.time-night .thought-card p {
+  color: #f5ebf3;
+}
+
+.time-night .presence-lab-head small,
+.time-night .presence-lab-head span,
+.time-night .presence-lab label > span,
+.time-night .presence-lab > p,
+.time-night .presence-lab-hint,
+.time-night .ritual-panel small,
+.time-night .ritual-item-title small,
+.time-night .personal-panel small,
+.time-night .personal-panel-head span,
+.time-night .personal-dna span,
+.time-night .personal-affinity-bars em,
+.time-night .personal-progress > span,
+.time-night .thought-card small,
+.time-night .thought-card > span {
+  color: #c6b8c8;
+}
+
+.time-night .presence-lab select,
+.time-night .thought-form textarea {
+  border-color: #8d809263;
+  background: #201a27d9;
+  color: #f1e8ef;
+  box-shadow: inset 0 0 0 1px #ffffff04;
+}
+
+.time-night .presence-lab select option {
+  background: #241d2b;
+  color: #f1e8ef;
+}
+
+.time-night .local-weather-button,
+.time-night .thought-form button,
+.time-night .focus-options button,
+.time-night .capture-moment-button {
+  border-color: #967f8c68;
+  background: #6f596857;
+  color: #f1e6ed;
+}
+
+.time-night .local-weather-button:hover,
+.time-night .thought-form button:hover,
+.time-night .focus-options button:hover,
+.time-night .capture-moment-button:hover {
+  background: #856b7b73;
+  color: #fff0f6;
+}
+
+.time-night .personal-stats > div,
+.time-night .personal-stats > div:nth-child(even),
+.time-night .personal-stats > div:nth-child(n + 3) {
+  background: #3a304358;
+}
+
+.time-night .personal-progress > i,
+.time-night .personal-affinity-bars i {
+  background: #75697a63;
+}
+
+.time-night .personal-progress > i > b,
+.time-night .personal-affinity-bars i b {
+  background: linear-gradient(90deg, #d992ab, #d3bb7f);
+}
+
+.time-night .personal-swatches i {
+  box-shadow: 0 0 0 1px #ac9faf;
+}
+
+.time-night .focus-hud {
+  border-color: #9d8fa05c;
+  background: #2b2433df;
+  box-shadow: 0 16px 45px #06040948;
+}
+
+/* Keep night readable under rain/mist/cloudy overrides. */
+.app-shell.time-night.weather-cloudy,
+.app-shell.time-night.weather-rain,
+.app-shell.time-night.weather-mist,
+.app-shell.time-night.weather-wind {
+  --presence-wash: #17131f;
+}
+
+@media (max-width: 680px) {
+  .time-night .presence-lab {
+    width: auto;
+    max-height: 62vh;
+  }
+}
