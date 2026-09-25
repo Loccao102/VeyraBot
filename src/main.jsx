@@ -11,6 +11,7 @@ import EnvironmentEffects from "./EnvironmentEffects";
 import usePresence from "./usePresence";
 import useInteractionManager from "./useInteractionManager";
 import useRitualGarden from "./useRitualGarden";
+import usePersonalGarden from "./usePersonalGarden";
 import useVeyraAgent from "./useVeyraAgent";
 import { captureSenMoment } from "./captureMoment";
 import "./styles.css";
@@ -159,6 +160,81 @@ function PresenceLab({ presence, onClose }) {
       <small className="presence-lab-hint">
         Tip: use manual values to preview P1 instantly, then switch back to Auto.
       </small>
+    </div>
+  );
+}
+
+function PersonalPanel({ personal, onClose }) {
+  const progressPercent = Math.round(personal.progress * 100);
+
+  return (
+    <div className="personal-panel" role="dialog" aria-label="My Sen">
+      <div className="personal-panel-head">
+        <div>
+          <small>P3 · MY SEN</small>
+          <strong>{personal.levelName}</strong>
+          <span>
+            Level {personal.level} · Together for {personal.ageDays} day
+            {personal.ageDays === 1 ? "" : "s"}
+          </span>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close My Sen">
+          ×
+        </button>
+      </div>
+
+      <div className="personal-progress">
+        <span>
+          <b>{progressPercent}%</b>
+          {personal.nextLevel
+            ? `toward ${personal.nextLevel.name}`
+            : "garden fully grown"}
+        </span>
+        <i>
+          <b style={{ width: `${progressPercent}%` }} />
+        </i>
+      </div>
+
+      <div className="personal-stats">
+        <div>
+          <small>NATURE</small>
+          <strong>{personal.dna.nature}</strong>
+        </div>
+        <div>
+          <small>RETURN DAYS</small>
+          <strong>{personal.profile.visitDays.length}</strong>
+        </div>
+        <div>
+          <small>THOUGHTS</small>
+          <strong>{personal.profile.thoughtsPlaced}</strong>
+        </div>
+        <div>
+          <small>FOCUS</small>
+          <strong>{Math.round(personal.profile.focusMinutes)}m</strong>
+        </div>
+      </div>
+
+      <div className="personal-dna">
+        <div>
+          <small>SEN DNA · {personal.dna.signature}</small>
+          <span>Your Sen keeps the same quiet signature on this browser.</span>
+        </div>
+        <div className="personal-swatches" aria-label="Your Sen palette">
+          {[
+            personal.dna.petalPrimary,
+            personal.dna.petalSoft,
+            personal.dna.leaf,
+            personal.dna.gold,
+          ].map((color) => (
+            <i key={color} style={{ background: color }} />
+          ))}
+        </div>
+      </div>
+
+      <div className="personal-unlocks">
+        <small>GROWN SO FAR</small>
+        <p>{personal.unlocks.join(" · ")}</p>
+      </div>
     </div>
   );
 }
@@ -354,6 +430,7 @@ function Scene({
   interactionEnabled,
   ritual,
   focusActive,
+  personal,
 }) {
   return (
     <>
@@ -384,6 +461,7 @@ function Scene({
           interactionEnabled={interactionEnabled}
           ritual={ritual}
           focusActive={focusActive}
+          personal={personal}
         />
       </Suspense>
       <ContactShadows
@@ -420,6 +498,7 @@ function App() {
   const [blooming, setBlooming] = useState(false);
   const [presenceLabOpen, setPresenceLabOpen] = useState(false);
   const [ritualPanelOpen, setRitualPanelOpen] = useState(false);
+  const [personalPanelOpen, setPersonalPanelOpen] = useState(false);
   const [captureStatus, setCaptureStatus] = useState("idle");
   const reducedMotion = useReducedMotion();
   const presence = usePresence();
@@ -442,6 +521,9 @@ function App() {
     enabled: !isRunning,
   });
   const ritual = useRitualGarden();
+  const personal = usePersonalGarden({
+    existingThoughts: ritual.thoughtCount,
+  });
   const current = STATES.find((item) => item[0] === state);
   useEffect(() => {
     if (!blooming || state === "sleep" || energy >= 100) return;
@@ -471,20 +553,30 @@ function App() {
   useEffect(() => {
     if (!ritual.focus.completionId) return undefined;
     interaction.celebrateFocus();
+    personal.registerFocus(ritual.focus.durationMs / 60_000);
     setState("success");
     const timer = window.setTimeout(() => setState("idle"), 2400);
     return () => window.clearTimeout(timer);
   }, [ritual.focus.completionId]);
 
+  useEffect(() => {
+    if (!interaction.lastDiscovery?.id) return;
+    personal.registerDiscovery(interaction.lastDiscovery.id);
+  }, [interaction.lastDiscovery?.id]);
+
   const addRitualThought = (text) => {
     const thought = ritual.addThought(text);
-    if (thought) interaction.celebrateThought();
+    if (thought) {
+      interaction.celebrateThought();
+      personal.registerThought();
+    }
   };
 
   const startFocus = (minutes) => {
     setState("idle");
     setBlooming(false);
     setRitualPanelOpen(false);
+    setPersonalPanelOpen(false);
     setPresenceLabOpen(false);
     ritual.clearSelectedThought();
     ritual.startFocus(minutes);
@@ -500,6 +592,7 @@ function App() {
         thoughtCount: ritual.thoughtCount,
       });
       setCaptureStatus(result.mode === "cancelled" ? "idle" : "done");
+      if (result.mode !== "cancelled") personal.registerCapture();
     } catch {
       setCaptureStatus("error");
     }
@@ -508,7 +601,7 @@ function App() {
 
   return (
     <main
-      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key} ${
+      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key} garden-level-${personal.level} ${
         ritual.focus.active ? "focus-mode" : ""
       }`}
     >
@@ -577,7 +670,7 @@ function App() {
               {PRESENCE_ICONS[presence.weather.key]} {presence.weather.label}
             </span>
             <span className="scene-discoveries">
-              DISCOVERED {interaction.discoveryCount}/{interaction.discoveryTotal}
+              DISCOVERED {personal.discoveryCount}/{interaction.discoveryTotal}
             </span>
           </div>
           <div
@@ -636,6 +729,7 @@ function App() {
                   interactionEnabled={!isRunning && !ritual.focus.active}
                   ritual={ritual}
                   focusActive={ritual.focus.active}
+                  personal={personal}
                 />
               </Canvas>
             </SceneBoundary>
@@ -651,6 +745,7 @@ function App() {
               className={presenceLabOpen ? "active" : ""}
               onClick={() => {
                 setRitualPanelOpen(false);
+                setPersonalPanelOpen(false);
                 setPresenceLabOpen((value) => !value);
               }}
             >
@@ -661,10 +756,22 @@ function App() {
               className={ritualPanelOpen ? "active" : ""}
               onClick={() => {
                 setPresenceLabOpen(false);
+                setPersonalPanelOpen(false);
                 setRitualPanelOpen((value) => !value);
               }}
             >
               Rituals
+            </button>
+            <button
+              type="button"
+              className={personalPanelOpen ? "active" : ""}
+              onClick={() => {
+                setPresenceLabOpen(false);
+                setRitualPanelOpen(false);
+                setPersonalPanelOpen((value) => !value);
+              }}
+            >
+              My Sen · L{personal.level}
             </button>
             <button type="button" onClick={() => setResetKey((k) => k + 1)}>
               Reset
@@ -674,6 +781,12 @@ function App() {
             <PresenceLab
               presence={presence}
               onClose={() => setPresenceLabOpen(false)}
+            />
+          )}
+          {personalPanelOpen && !ritual.focus.active && (
+            <PersonalPanel
+              personal={personal}
+              onClose={() => setPersonalPanelOpen(false)}
             />
           )}
           {ritualPanelOpen && !ritual.focus.active && (
@@ -926,7 +1039,7 @@ function App() {
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>P2 · PLAY · FINAL PASS · v1.1</span>
+        <span>P3 · PERSONAL · v1.2</span>
       </footer>
     </main>
   );
