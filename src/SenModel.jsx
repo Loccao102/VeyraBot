@@ -9,6 +9,7 @@ const PINK = "#eda1b6",
   JADE = "#688a70";
 const TAU = Math.PI * 2;
 const damp = THREE.MathUtils.damp;
+const randomBetween = (min, max) => min + Math.random() * (max - min);
 
 function makeGlyphTexture(glyph, color = "#ffffff", fontSize = 140) {
   if (typeof document === "undefined") return null;
@@ -91,6 +92,13 @@ const MOOD_MOTION = {
     corePulseAmp: 0.075,
     corePulseSpeed: 1.08,
     lean: 0,
+    blinkMin: 3.8,
+    blinkMax: 6.2,
+    blinkDuration: 0.11,
+    hoverAmp: 0.05,
+    hoverSpeed: 0.82,
+    hoverSecondaryAmp: 0.018,
+    hoverSecondarySpeed: 0.45,
   },
   thinking: {
     floatAmp: 0.058,
@@ -106,6 +114,13 @@ const MOOD_MOTION = {
     corePulseAmp: 0.09,
     corePulseSpeed: 0.96,
     lean: -0.035,
+    blinkMin: 4.2,
+    blinkMax: 7.0,
+    blinkDuration: 0.14,
+    hoverAmp: 0.04,
+    hoverSpeed: 0.68,
+    hoverSecondaryAmp: 0.014,
+    hoverSecondarySpeed: 0.35,
   },
   listening: {
     floatAmp: 0.052,
@@ -121,6 +136,13 @@ const MOOD_MOTION = {
     corePulseAmp: 0.075,
     corePulseSpeed: 1.18,
     lean: 0.05,
+    blinkMin: 4.8,
+    blinkMax: 7.4,
+    blinkDuration: 0.1,
+    hoverAmp: 0.042,
+    hoverSpeed: 0.76,
+    hoverSecondaryAmp: 0.014,
+    hoverSecondarySpeed: 0.4,
   },
   working: {
     floatAmp: 0.04,
@@ -136,6 +158,13 @@ const MOOD_MOTION = {
     corePulseAmp: 0.11,
     corePulseSpeed: 1.4,
     lean: 0.018,
+    blinkMin: 3.5,
+    blinkMax: 5.2,
+    blinkDuration: 0.09,
+    hoverAmp: 0.032,
+    hoverSpeed: 0.95,
+    hoverSecondaryAmp: 0.01,
+    hoverSecondarySpeed: 0.52,
   },
   success: {
     floatAmp: 0.09,
@@ -151,6 +180,13 @@ const MOOD_MOTION = {
     corePulseAmp: 0.15,
     corePulseSpeed: 1.72,
     lean: -0.018,
+    blinkMin: 2.8,
+    blinkMax: 4.8,
+    blinkDuration: 0.09,
+    hoverAmp: 0.065,
+    hoverSpeed: 1.05,
+    hoverSecondaryAmp: 0.02,
+    hoverSecondarySpeed: 0.62,
   },
   sleep: {
     floatAmp: 0.034,
@@ -166,6 +202,13 @@ const MOOD_MOTION = {
     corePulseAmp: 0.04,
     corePulseSpeed: 0.64,
     lean: 0.07,
+    blinkMin: 6.8,
+    blinkMax: 10,
+    blinkDuration: 0.22,
+    hoverAmp: 0.026,
+    hoverSpeed: 0.34,
+    hoverSecondaryAmp: 0.01,
+    hoverSecondarySpeed: 0.2,
   },
 };
 
@@ -400,21 +443,76 @@ function CrownPetal({ side, index, state, motion, bloom, palette }) {
 function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
   const ref = useRef();
   const gazeRefs = useRef({});
+  const blinkAmount = useRef(0);
+  const nextBlinkAt = useRef(0);
+  const blinkUntil = useRef(0);
+  const doubleBlinkAt = useRef(-1);
+
+  useEffect(() => {
+    const config = MOOD_MOTION[state] || MOOD_MOTION.idle;
+    nextBlinkAt.current = randomBetween(config.blinkMin, config.blinkMax);
+    blinkUntil.current = 0;
+    doubleBlinkAt.current = -1;
+    blinkAmount.current = state === "sleep" ? 0.88 : 0;
+  }, [state]);
 
   useFrame(({ clock }, delta) => {
-    const blink =
-      motion && Math.sin(clock.elapsedTime * 0.85) > 0.998 ? 0.13 : 1;
+    const t = clock.elapsedTime;
+    const config = MOOD_MOTION[state] || MOOD_MOTION.idle;
     const wakeAmount = bloom
       ? THREE.MathUtils.smoothstep(bloom.current, 0.6, 0.72)
       : 1;
-    const restAmount = state === "sleep" ? 0.08 : Math.max(0.08, wakeAmount);
+
+    let targetBlink = 0;
+
+    if (state === "sleep") {
+      targetBlink = 0.9 + Math.sin(t * 0.42) * 0.045;
+    } else if (motion) {
+      if (nextBlinkAt.current <= 0) {
+        nextBlinkAt.current =
+          t + randomBetween(config.blinkMin, config.blinkMax);
+      }
+
+      if (blinkUntil.current > t) {
+        targetBlink = 1;
+      } else if (doubleBlinkAt.current > 0 && t >= doubleBlinkAt.current) {
+        blinkUntil.current = t + config.blinkDuration * 0.82;
+        doubleBlinkAt.current = -1;
+        targetBlink = 1;
+      } else if (t >= nextBlinkAt.current) {
+        blinkUntil.current = t + config.blinkDuration;
+
+        if (Math.random() < 0.2) {
+          doubleBlinkAt.current =
+            blinkUntil.current + randomBetween(0.09, 0.16);
+        } else {
+          doubleBlinkAt.current = -1;
+        }
+
+        nextBlinkAt.current =
+          blinkUntil.current +
+          randomBetween(config.blinkMin, config.blinkMax);
+        targetBlink = 1;
+      }
+    }
+
+    blinkAmount.current = damp(
+      blinkAmount.current,
+      targetBlink,
+      targetBlink > blinkAmount.current ? 28 : 18,
+      delta,
+    );
+
+    const moodEyeScale =
+      state === "thinking" ? 0.86 : state === "listening" ? 1.08 : 1;
+    const blinkScale = THREE.MathUtils.lerp(1, 0.09, blinkAmount.current);
+    const restAmount =
+      state === "sleep" ? 1 : Math.max(0.08, wakeAmount);
 
     ref.current.scale.y = damp(
       ref.current.scale.y,
-      (state === "thinking" ? 0.85 : state === "listening" ? 1.1 : 1) *
-        blink *
-        restAmount,
-      18,
+      moodEyeScale * blinkScale * restAmount,
+      state === "sleep" ? 8 : 22,
       delta,
     );
 
@@ -431,8 +529,6 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     const gazeX = applyGazeDeadZone(gazePointer?.current?.x ?? 0);
     const gazeY = applyGazeDeadZone(gazePointer?.current?.y ?? 0);
 
-    // Pupils only lead the shared gaze target slightly. The head carries most
-    // of the motion so Sen feels attentive rather than uncanny.
     const targetX = gazeX * 0.024 * wakeAmount * gazeAmount;
     const targetY = gazeY * 0.019 * wakeAmount * gazeAmount;
 
@@ -2264,9 +2360,15 @@ export default function SenModel({
       ambientMotion *
       (focusActive ? 0.72 : 1) *
       THREE.MathUtils.clamp(presenceCalm, 0.88, 1.08);
+    const hoverFloat =
+      (Math.sin(t * moodMotion.hoverSpeed) * moodMotion.hoverAmp +
+        Math.sin(t * moodMotion.hoverSecondarySpeed + 1.3) *
+          moodMotion.hoverSecondaryAmp) *
+      ambientScale;
     const ambientFloat =
       Math.sin(t * moodMotion.floatSpeed) *
       moodMotion.floatAmp *
+      0.42 *
       ambientScale;
     const ambientSway =
       Math.sin(t * moodMotion.swaySpeed + 0.55) *
@@ -2347,7 +2449,8 @@ export default function SenModel({
     );
     root.current.position.y = damp(
       root.current.position.y,
-      ambientFloat +
+      hoverFloat +
+        ambientFloat +
         gestureLift +
         Math.sin(t * (0.92 + presenceCalm * 0.24)) *
           cfg.bob *
