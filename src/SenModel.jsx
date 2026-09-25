@@ -24,14 +24,14 @@ const LOTUS_LAYERS = [
     count: 8,
     start: 0,
     end: 0.58,
-    radius: 0.6,
+    radius: 0.56,
     closedHeight: 2.18,
-    openRadius: 0.36,
-    length: 1.06,
-    width: 0.56,
-    lift: 0.3,
-    tipDrop: 0.18,
-    curl: 0.22,
+    openRadius: 0.22,
+    length: 0.86,
+    width: 0.49,
+    lift: 0.44,
+    tipDrop: 0.07,
+    curl: 0.16,
     color: "#f5bdcb",
   },
   {
@@ -39,14 +39,14 @@ const LOTUS_LAYERS = [
     count: 6,
     start: 0.16,
     end: 0.76,
-    radius: 0.47,
+    radius: 0.44,
     closedHeight: 2.23,
-    openRadius: 0.28,
-    length: 0.88,
-    width: 0.49,
-    lift: 0.38,
-    tipDrop: 0.12,
-    curl: 0.17,
+    openRadius: 0.18,
+    length: 0.72,
+    width: 0.43,
+    lift: 0.46,
+    tipDrop: 0.05,
+    curl: 0.13,
     color: "#eea7bc",
   },
   {
@@ -54,14 +54,14 @@ const LOTUS_LAYERS = [
     count: 6,
     start: 0.34,
     end: 0.9,
-    radius: 0.35,
+    radius: 0.33,
     closedHeight: 2.28,
-    openRadius: 0.2,
-    length: 0.69,
-    width: 0.42,
-    lift: 0.47,
-    tipDrop: 0.08,
-    curl: 0.12,
+    openRadius: 0.13,
+    length: 0.57,
+    width: 0.37,
+    lift: 0.49,
+    tipDrop: 0.03,
+    curl: 0.1,
     color: "#ffe0df",
   },
   {
@@ -69,14 +69,14 @@ const LOTUS_LAYERS = [
     count: 4,
     start: 0.52,
     end: 1,
-    radius: 0.25,
+    radius: 0.24,
     closedHeight: 2.32,
-    openRadius: 0.14,
-    length: 0.52,
-    width: 0.34,
+    openRadius: 0.09,
+    length: 0.43,
+    width: 0.3,
     lift: 0.54,
-    tipDrop: 0.04,
-    curl: 0.08,
+    tipDrop: 0.015,
+    curl: 0.07,
     color: "#f7c2cf",
   },
 ];
@@ -342,16 +342,16 @@ function Eyes({ state, motion, bloom }) {
 }
 
 function lotusLayerPoint(t, u, openness, cfg, twistSign) {
-  const bell = Math.pow(Math.sin(Math.PI * t), 0.78);
-  const tipBias = 0.28 + 0.72 * t * t;
+  const bell = Math.pow(Math.sin(Math.PI * t), 0.82);
+  const tipBias = 0.22 + 0.78 * t * t;
   const localOpen = THREE.MathUtils.clamp(openness * tipBias, 0, 1);
   const width =
-    bell * cfg.width * (1 + 0.12 * openness) * (1 - 0.08 * t);
-  const closedRadius = cfg.radius * (1 - 0.92 * t) + 0.015;
+    bell * cfg.width * (1 + 0.07 * openness) * (1 - 0.12 * t);
+  const closedRadius = cfg.radius * (1 - 0.9 * t) + 0.015;
   const openRadius =
     cfg.openRadius +
-    cfg.length * t +
-    cfg.curl * Math.sin(Math.PI * t) * (1 - 0.28 * u * u);
+    cfg.length * t * 0.82 +
+    cfg.curl * Math.sin(Math.PI * t) * (1 - 0.22 * u * u);
   const radial = THREE.MathUtils.lerp(
     closedRadius,
     openRadius,
@@ -359,17 +359,18 @@ function lotusLayerPoint(t, u, openness, cfg, twistSign) {
   );
   const closedY = cfg.closedHeight * t;
   const openY =
-    0.12 +
-    cfg.lift * Math.sin(Math.PI * t) * (1 - 0.18 * u * u) -
-    cfg.tipDrop * Math.pow(t, 2.5);
+    0.14 +
+    cfg.lift * Math.sin(Math.PI * t) * (1 - 0.14 * u * u) +
+    0.06 * openness * Math.pow(t, 1.8) -
+    cfg.tipDrop * Math.pow(t, 2.2);
   const y = THREE.MathUtils.lerp(closedY, openY, localOpen);
   const twist =
     twistSign *
     cfg.width *
-    0.15 *
+    0.08 *
     openness *
-    Math.pow(t, 1.8) *
-    (0.35 + 0.65 * (1 - u * u));
+    Math.pow(t, 1.6) *
+    (0.3 + 0.7 * (1 - u * u));
 
   return new THREE.Vector3(u * width + twist, y, radial);
 }
@@ -523,23 +524,23 @@ function LotusBloomPetal({
     const settle = THREE.MathUtils.smoothstep(amount, 0.78, 1);
     const overshoot =
       Math.sin(settle * Math.PI) *
-      0.055 *
+      0.025 *
       twistSign *
       (1 - layerIndex * 0.12);
     const ambient =
       Math.sin(clock.elapsedTime * 0.72 + index * 0.83 + layerIndex) *
-      0.006 *
+      0.0035 *
       motion *
       amount;
     motionRef.current.rotation.x = damp(
       motionRef.current.rotation.x,
-      -0.025 * amount + overshoot,
+      -0.008 * amount + overshoot,
       4,
       delta,
     );
     motionRef.current.rotation.z = damp(
       motionRef.current.rotation.z,
-      twistSign * 0.018 * amount + ambient,
+      twistSign * 0.009 * amount + ambient,
       4,
       delta,
     );
