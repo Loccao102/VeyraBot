@@ -789,7 +789,21 @@ em {
 }
 .control-panel label > span {
   display: flex;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.control-panel label > span > span {
+  display: grid;
+  gap: 2px;
+}
+
+.control-panel label > span small {
+  font-size: 6px;
+  font-weight: 400;
+  letter-spacing: 0.65px;
+  color: #aa978c;
 }
 .control-panel b {
   font-size: 9px;
@@ -798,10 +812,31 @@ em {
 }
 .control-panel input {
   width: 100%;
-  height: 3px;
-  margin: 13px 0 0;
+  height: 5px;
+  margin: 11px 0 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      #b77588 0 var(--control-level),
+      #ded1ca var(--control-level) 100%
+    );
   accent-color: #aa6e80;
   cursor: pointer;
+}
+
+.control-panel input::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.control-panel input::-webkit-slider-thumb {
+  margin-top: -4px;
+}
+
+.control-panel label:has(input:hover) > span > span {
+  color: #8f5b69;
 }
 .rest-note {
   display: flex;
@@ -2637,6 +2672,92 @@ em {
   color: #745f5b;
 }
 
+.personal-affinity {
+  display: grid;
+  gap: 9px;
+  padding: 12px 2px;
+  border-bottom: 1px solid #eee3dc;
+}
+
+.personal-affinity-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.personal-affinity-head small {
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: #9f847b;
+}
+
+.personal-affinity-head strong {
+  font: normal 11px Georgia, serif;
+  color: #765e5e;
+}
+
+.personal-affinity-bars {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px 10px;
+}
+
+.personal-affinity-bars > span {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.personal-affinity-bars em {
+  font-style: normal;
+  font-size: 6px;
+  color: #9b877e;
+}
+
+.personal-affinity-bars i {
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e3d7d0;
+}
+
+.personal-affinity-bars i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c88d9f, #c5aa78);
+  transition: width 0.45s ease;
+}
+
+.garden-style-focus .garden-ring {
+  border-color: #9ca99554;
+  box-shadow: 0 0 56px #8ea18b1d;
+}
+
+.garden-style-reflection .garden-moon {
+  box-shadow:
+    0 0 82px #dfa8b83d,
+    inset 0 0 56px #d7afba18;
+}
+
+.garden-style-explorer .garden-ring {
+  border-color: #c7a36f66;
+  box-shadow: 0 0 62px #d1ad7130;
+}
+
+.garden-style-nocturne .garden-moon {
+  box-shadow:
+    0 0 92px #9b8ca94f,
+    inset 0 0 62px #6f617836;
+}
+
+.garden-style-balanced .garden-ring {
+  border-color: #b49a8d57;
+}
+
 .personal-dna {
   display: flex;
   align-items: center;
@@ -2706,6 +2827,7 @@ em {
 .time-night .personal-stats,
 .time-night .personal-stats > div:nth-child(even),
 .time-night .personal-stats > div:nth-child(n + 3),
+.time-night .personal-affinity,
 .time-night .personal-dna {
   border-color: #857987;
 }
@@ -2756,4 +2878,17 @@ em {
 .focus-mode .garden-statusbar,
 .focus-mode .interaction-toast {
   display: none;
+}
+
+
+.time-night .personal-affinity-head strong {
+  color: #f0e4eb;
+}
+
+.time-night .personal-affinity-bars em {
+  color: #cdbdc8;
+}
+
+.time-night .personal-affinity-bars i {
+  background: #817684;
 }
