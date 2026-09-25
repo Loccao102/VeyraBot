@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import * as THREE from 'three'\nimport VeyraSignature from './VeyraSignature'
 
 const STATE = {
   idle:      { bob: .08, sway: .035, halo: .55, core: 1.0, orbit: .25, ear: .04, eye: 1.0 },
@@ -427,7 +427,7 @@ export default function VeyraModel({
         <Ring radius={.86} tube={.010} color={CYAN} opacity={state==='sleep'?.10:.55} />
       </group>
 
-      {state === 'listening' && <ListeningWaves />}
+      <VeyraSignature state={state} />\n\n      {state === 'listening' && <ListeningWaves />}
       {state === 'working' && <WorkHolograms />}
       {state === 'sleep' && <SleepMarks />}
 
