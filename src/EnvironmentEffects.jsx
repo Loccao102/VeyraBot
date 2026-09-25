@@ -113,25 +113,20 @@ function AmbientMotes({ phase, reducedMotion }) {
         phase.key === "night" ? twinkle * 0.42 : twinkle * 0.26;
       const scale =
         0.82 + Math.sin(time * 0.9 + mote.phase) * 0.14 * movement;
-      mesh.scale.setScalar(mote.size * scale);
+      mesh.scale.setScalar(scale);
     });
   });
 
   return (
     <group ref={ref}>
       {motes.map((mote, i) => (
-        <mesh
-          key={i}
-          position={[mote.x, mote.y, mote.z]}
-          scale={mote.size}
-        >
-          <sphereGeometry args={[1, 8, 6]} />
+        <mesh key={i} position={[mote.x, mote.y, mote.z]}>
+          <sphereGeometry args={[mote.size, 8, 6]} />
           <meshBasicMaterial
             color={mote.gold ? phase.accent : phase.particle}
             transparent
-            opacity={0.12}
+            opacity={0.1}
             depthWrite={false}
-            blending={THREE.AdditiveBlending}
           />
         </mesh>
       ))}
