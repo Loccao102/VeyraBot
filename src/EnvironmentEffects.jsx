@@ -110,10 +110,10 @@ function AmbientMotes({ phase, reducedMotion }) {
       const twinkle =
         0.34 + (Math.sin(time * 1.15 + mote.phase) + 1) * 0.18;
       mesh.material.opacity =
-        phase.key === "night" ? twinkle * 0.85 : twinkle * 0.5;
+        phase.key === "night" ? twinkle * 0.42 : twinkle * 0.26;
       const scale =
         0.82 + Math.sin(time * 0.9 + mote.phase) * 0.14 * movement;
-      mesh.scale.setScalar(scale);
+      mesh.scale.setScalar(mote.size * scale);
     });
   });
 
@@ -129,7 +129,7 @@ function AmbientMotes({ phase, reducedMotion }) {
           <meshBasicMaterial
             color={mote.gold ? phase.accent : phase.particle}
             transparent
-            opacity={0.2}
+            opacity={0.12}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
