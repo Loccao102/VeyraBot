@@ -954,6 +954,8 @@ export default function SenModel({
   hoverControl = 1,
   reducedMotion = false,
   presencePhase = "day",
+  presenceWeather = "clear",
+  presenceMood = "bright",
 }) {
   const root = useRef(),
     awake = useRef(),
@@ -965,7 +967,7 @@ export default function SenModel({
   const motion = reducedMotion ? 0 : 1;
   useFrame(({ clock, pointer }, delta) => {
     const t = clock.elapsedTime;
-    const presenceCalm =
+    const phaseCalm =
       presencePhase === "night"
         ? 0.48
         : presencePhase === "dawn"
@@ -973,6 +975,25 @@ export default function SenModel({
           : presencePhase === "dusk"
             ? 0.8
             : 1;
+    const weatherCalm =
+      presenceWeather === "rain"
+        ? 0.68
+        : presenceWeather === "mist"
+          ? 0.58
+          : presenceWeather === "cloudy"
+            ? 0.82
+            : presenceWeather === "wind"
+              ? 1.12
+              : 1;
+    const moodBias =
+      presenceMood === "sleepy"
+        ? 0.82
+        : presenceMood === "dreamy"
+          ? 0.88
+          : presenceMood === "curious"
+            ? 1.08
+            : 1;
+    const presenceCalm = phaseCalm * weatherCalm * moodBias;
     const autonomous = state === "idle" ? motion : 0;
     const idleLook =
       (Math.sin(t * 0.17) * 0.075 +
