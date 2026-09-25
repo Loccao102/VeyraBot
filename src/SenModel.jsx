@@ -835,6 +835,162 @@ function GardenFireflies({ color, reducedMotion }) {
   );
 }
 
+function AdaptiveGardenSignature({ personal, reducedMotion }) {
+  const style = personal?.gardenStyle ?? "young";
+  const dna = personal?.dna ?? {};
+  const leaf = dna.leaf ?? JADE;
+  const pink = dna.petalPrimary ?? PINK;
+  const gold = dna.gold ?? GOLD;
+  const core = dna.coreGlow ?? "#ec96a7";
+
+  if (style === "young") return null;
+
+  if (style === "focus") {
+    return (
+      <group>
+        {[0, 1, 2].map((i) => (
+          <mesh
+            key={i}
+            position={[-1.18 + i * 0.13, -1.02 + i * 0.075, -0.55 + i * 0.02]}
+            rotation={[0.12, 0.5 + i * 0.35, 0.05]}
+            scale={[0.16 - i * 0.018, 0.055, 0.12 - i * 0.012]}
+          >
+            <dodecahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial
+              color={i === 1 ? "#b8aaa2" : "#c9bcb2"}
+              roughness={0.86}
+            />
+          </mesh>
+        ))}
+        <group position={[-1.18, -1.095, -0.55]} rotation={[-Math.PI / 2, 0, 0]}>
+          {[0, 1].map((i) => (
+            <mesh key={i}>
+              <ringGeometry args={[0.24 + i * 0.16, 0.247 + i * 0.16, 72]} />
+              <meshBasicMaterial
+                color={i ? gold : leaf}
+                transparent
+                opacity={0.11}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          ))}
+        </group>
+      </group>
+    );
+  }
+
+  if (style === "reflection") {
+    return (
+      <group>
+        {Array.from({ length: 5 }, (_, i) => {
+          const angle = -1.1 + i * 0.55;
+          return (
+            <group
+              key={i}
+              position={[
+                Math.sin(angle) * (1.42 + (i % 2) * 0.12),
+                -1.02,
+                Math.cos(angle) * 0.64 - 0.22,
+              ]}
+              rotation={[0, -angle, i % 2 ? -0.18 : 0.18]}
+            >
+              <Petal
+                rotation={[1.34, 0, 0]}
+                scale={[0.15, 0.24, 0.1]}
+                color={i % 2 ? pink : dna.petalSoft ?? PEARL}
+                accent={gold}
+              />
+            </group>
+          );
+        })}
+      </group>
+    );
+  }
+
+  if (style === "explorer") {
+    return (
+      <group>
+        {Array.from({ length: 8 }, (_, i) => {
+          const angle = (i / 8) * TAU + 0.4;
+          return (
+            <mesh
+              key={i}
+              position={[
+                Math.sin(angle) * (1.28 + (i % 3) * 0.18),
+                -0.58 + (i % 4) * 0.28,
+                Math.cos(angle) * 0.62 - 0.06,
+              ]}
+              rotation={[0.3, angle, Math.PI / 4]}
+            >
+              <octahedronGeometry args={[0.024 + (i % 3) * 0.006, 0]} />
+              <meshBasicMaterial
+                color={i % 3 === 0 ? gold : i % 2 ? pink : leaf}
+                transparent
+                opacity={0.42}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          );
+        })}
+      </group>
+    );
+  }
+
+  if (style === "nocturne") {
+    return (
+      <group>
+        <GardenFireflies color={core} reducedMotion={reducedMotion} />
+        <mesh position={[-1.38, -0.82, -0.5]}>
+          <octahedronGeometry args={[0.085, 0]} />
+          <meshPhysicalMaterial
+            color={dna.petalSoft ?? PEARL}
+            emissive={core}
+            emissiveIntensity={0.62}
+            roughness={0.22}
+            clearcoat={0.9}
+          />
+        </mesh>
+        <pointLight
+          position={[-1.38, -0.76, -0.5]}
+          color={core}
+          intensity={0.3}
+          distance={1.4}
+          decay={2}
+        />
+      </group>
+    );
+  }
+
+  return (
+    <group>
+      <mesh position={[-1.32, -1.045, -0.42]} scale={[0.14, 0.06, 0.11]}>
+        <dodecahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial color="#c1b4aa" roughness={0.85} />
+      </mesh>
+      <group position={[1.3, -1.02, -0.38]} rotation={[0, -0.5, 0]}>
+        <Petal
+          rotation={[1.34, 0, 0]}
+          scale={[0.14, 0.22, 0.1]}
+          color={pink}
+          accent={gold}
+        />
+      </group>
+      <mesh position={[0.95, -0.46, -0.35]}>
+        <sphereGeometry args={[0.024, 8, 6]} />
+        <meshBasicMaterial
+          color={core}
+          transparent
+          opacity={0.42}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function PersonalGardenGrowth({ personal, reducedMotion }) {
   const level = personal?.level ?? 1;
   const dna = personal?.dna ?? {};
@@ -856,6 +1012,10 @@ function PersonalGardenGrowth({ personal, reducedMotion }) {
 
   return (
     <group>
+      <AdaptiveGardenSignature
+        personal={personal}
+        reducedMotion={reducedMotion}
+      />
       {level >= 2 &&
         leaves.slice(0, Math.min(leaves.length, level)).map(
           ([x, y, z, rotation, scale], index) => (
@@ -1672,6 +1832,7 @@ export default function SenModel({
     awake = useRef(),
     head = useRef(),
     crystal = useRef(),
+    coreAura = useRef(),
     budLight = useRef();
   const sidePetals = useRef({});
   const gazePointer = useGlobalGazePointer();
@@ -1807,9 +1968,10 @@ export default function SenModel({
       delta,
     );
     root.current.position.y =
-      Math.sin(t * (1.05 + presenceCalm * 0.25)) *
+      Math.sin(t * (0.92 + presenceCalm * 0.24)) *
       cfg.bob *
       hoverControl *
+      1.65 *
       motion *
       (0.72 + presenceCalm * 0.28);
     const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.2, 0.72);
@@ -1832,6 +1994,16 @@ export default function SenModel({
       awake.current.rotation.y,
       idleLook * 0.28 + gazeX * 0.038 * emergence,
       2.1,
+      delta,
+    );
+    awake.current.rotation.z = damp(
+      awake.current.rotation.z,
+      Math.sin(t * 0.48) *
+        0.018 *
+        hoverControl *
+        motion *
+        (0.7 + presenceCalm * 0.3),
+      2.4,
       delta,
     );
     head.current.position.y = damp(
@@ -1929,7 +2101,9 @@ export default function SenModel({
 
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
-      (state === "sleep" ? 0.18 : cfg.glow) * coreControl * sleepingPulse +
+      (state === "sleep" ? 0.18 : cfg.glow) *
+        (0.06 + coreControl * 1.12) *
+        sleepingPulse +
         coreInteractionGlow,
       coreHeld ? 8 : 4,
       delta,
@@ -1939,8 +2113,8 @@ export default function SenModel({
       (state === "sleep"
         ? 0.22 + Math.sin(t * 1.05) * 0.035 * motion
         : 0.32 + bloom.current * 0.52 + wakeFlash * 0.72) *
-        coreControl +
-        coreInteractionGlow * 0.62,
+        (0.04 + coreControl * 1.18) +
+        coreInteractionGlow * 0.72,
       coreHeld ? 8 : 4,
       delta,
     );
@@ -1968,6 +2142,21 @@ export default function SenModel({
       delta,
     );
     crystal.current.rotation.y += delta * (coreHeld ? 0.72 : 0.25) * motion;
+    if (coreAura.current) {
+      const warmth = THREE.MathUtils.clamp(coreControl / 2, 0, 1);
+      const pulse =
+        1 + Math.sin(t * (1.5 + warmth * 1.2)) * 0.07 * motion * warmth;
+      const auraScale =
+        (0.72 + warmth * 0.72 + coreInteractionGlow * 0.08) * pulse;
+      coreAura.current.scale.setScalar(auraScale);
+      coreAura.current.material.opacity = damp(
+        coreAura.current.material.opacity,
+        (0.015 + warmth * 0.24) * bloom.current +
+          coreInteractionGlow * 0.04,
+        6,
+        delta,
+      );
+    }
   });
   return (
     <group ref={root}>
@@ -2155,6 +2344,20 @@ export default function SenModel({
             metalness={0.15}
             roughness={0.15}
             clearcoat={1}
+          />
+        </mesh>
+        <mesh
+          ref={coreAura}
+          position={[0, -0.1, 0.295]}
+          scale={[0.9, 0.9, 0.9]}
+        >
+          <sphereGeometry args={[0.42, 24, 16]} />
+          <meshBasicMaterial
+            color={personalPalette.coreGlow}
+            transparent
+            opacity={0.08}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
           />
         </mesh>
         <Line
