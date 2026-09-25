@@ -7,9 +7,8 @@ import {
   Html,
 } from "@react-three/drei";
 import SenModel from "./SenModel";
-import EnvironmentEffects, {
-  getPresencePhase,
-} from "./EnvironmentEffects";
+import EnvironmentEffects from "./EnvironmentEffects";
+import usePresence from "./usePresence";
 import useVeyraAgent from "./useVeyraAgent";
 import "./styles.css";
 
@@ -68,20 +67,85 @@ function useReducedMotion() {
   return reduced;
 }
 
-function usePresenceClock() {
-  const [phase, setPhase] = useState(() => getPresencePhase(new Date()));
+function PresenceLab({ presence, onClose }) {
+  const weatherDetail =
+    presence.weatherStatus === "locating"
+      ? "Waiting for location permission…"
+      : presence.weatherStatus === "loading"
+        ? "Reading local weather…"
+        : presence.weatherStatus === "denied"
+          ? "Location permission was denied."
+          : presence.weatherStatus === "error"
+            ? "Weather could not be loaded."
+            : presence.weatherStatus === "unsupported"
+              ? "Geolocation is not available in this browser."
+              : presence.weatherInfo?.temperature != null
+                ? `${Math.round(presence.weatherInfo.temperature)}°C · ${Math.round(
+                    presence.weatherInfo.windSpeed ?? 0,
+                  )} km/h wind`
+                : "Auto uses local weather after you allow location once.";
 
-  useEffect(() => {
-    const update = () => setPhase(getPresencePhase(new Date()));
-    const timer = window.setInterval(update, 60_000);
-    window.addEventListener("focus", update);
-    return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("focus", update);
-    };
-  }, []);
+  return (
+    <div className="presence-lab" role="dialog" aria-label="P1 Presence preview">
+      <div className="presence-lab-head">
+        <div>
+          <small>P1 · PRESENCE LAB</small>
+          <strong>
+            {presence.phase.label} · {presence.weather.label}
+          </strong>
+          <span>Mood · {presence.mood.label}</span>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close Presence Lab">
+          ×
+        </button>
+      </div>
 
-  return phase;
+      <label>
+        <span>Time</span>
+        <select
+          value={presence.phaseMode}
+          onChange={(event) => presence.setPhaseMode(event.target.value)}
+        >
+          <option value="auto">Auto · local clock</option>
+          <option value="dawn">Dawn</option>
+          <option value="day">Day</option>
+          <option value="dusk">Dusk</option>
+          <option value="night">Night</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Weather</span>
+        <select
+          value={presence.weatherMode}
+          onChange={(event) => presence.setWeatherMode(event.target.value)}
+        >
+          <option value="auto">Auto · local weather</option>
+          <option value="clear">Clear</option>
+          <option value="cloudy">Cloudy</option>
+          <option value="rain">Rain</option>
+          <option value="mist">Mist</option>
+          <option value="wind">Wind</option>
+        </select>
+      </label>
+
+      <button
+        type="button"
+        className="local-weather-button"
+        onClick={presence.requestLocalWeather}
+        disabled={
+          presence.weatherStatus === "locating" ||
+          presence.weatherStatus === "loading"
+        }
+      >
+        Use my local weather
+      </button>
+      <p>{weatherDetail}</p>
+      <small className="presence-lab-hint">
+        Tip: use manual values to preview P1 instantly, then switch back to Auto.
+      </small>
+    </div>
+  );
 }
 
 class SceneBoundary extends Component {
@@ -110,11 +174,14 @@ function Scene({
   reducedMotion,
   resetKey,
   presence,
+  weather,
+  mood,
 }) {
   return (
     <>
       <EnvironmentEffects
         phase={presence}
+        weather={weather}
         reducedMotion={reducedMotion}
         sleeping={state === "sleep"}
       />
@@ -133,6 +200,8 @@ function Scene({
           hoverControl={hover}
           reducedMotion={reducedMotion}
           presencePhase={presence.key}
+          presenceWeather={weather.key}
+          presenceMood={mood.key}
         />
       </Suspense>
       <ContactShadows
@@ -165,8 +234,9 @@ function App() {
   const [resetKey, setResetKey] = useState(0);
   const [energy, setEnergy] = useState(72);
   const [blooming, setBlooming] = useState(false);
+  const [presenceLabOpen, setPresenceLabOpen] = useState(false);
   const reducedMotion = useReducedMotion();
-  const presence = usePresenceClock();
+  const presence = usePresence();
   const {
     state,
     setState,
@@ -205,7 +275,9 @@ function App() {
     setBlooming(true);
   };
   return (
-    <main className={`app-shell state-${state} time-${presence.key}`}>
+    <main
+      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key}`}
+    >
       <header className="topbar">
         <a className="brand" href="./" aria-label="Sen home">
           <LotusMark />
@@ -266,7 +338,9 @@ function App() {
           <div className="scene-topline">
             <span>THE LOTUS GARDEN</span>
             <span>✧</span>
-            <span className="presence-label">{presence.label}</span>
+            <span className="presence-label">
+              {presence.phase.label} · {presence.weather.label}
+            </span>
           </div>
           <div className="canvas-wrap">
             <SceneBoundary>
@@ -290,7 +364,9 @@ function App() {
                   hover={hover}
                   reducedMotion={reducedMotion}
                   resetKey={resetKey}
-                  presence={presence}
+                  presence={presence.phase}
+                  weather={presence.weather}
+                  mood={presence.mood}
                 />
               </Canvas>
             </SceneBoundary>
@@ -302,10 +378,22 @@ function App() {
           </div>
           <div className="scene-tools">
             <span>Drag gently to look around</span>
+            <button
+              type="button"
+              onClick={() => setPresenceLabOpen((value) => !value)}
+            >
+              Presence preview
+            </button>
             <button onClick={() => setResetKey((k) => k + 1)}>
               Reset view ↺
             </button>
           </div>
+          {presenceLabOpen && (
+            <PresenceLab
+              presence={presence}
+              onClose={() => setPresenceLabOpen(false)}
+            />
+          )}
         </section>
 
         <aside className="detail-panel">
@@ -515,7 +603,7 @@ function App() {
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>P1 · PRESENCE · v0.6</span>
+        <span>P1 · PRESENCE · v0.7</span>
       </footer>
     </main>
   );
