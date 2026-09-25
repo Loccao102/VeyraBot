@@ -18,11 +18,11 @@ import "./styles.css";
 
 const STATES = [
   ["idle", "Idle", "A quiet moment, together.", "◌"],
-  ["thinking", "Thinking", "A little space for a thoughtful answer.", "◇"],
-  ["listening", "Listening", "You have my attention.", "∿"],
-  ["working", "Working", "One gentle step at a time.", "⌁"],
+  ["thinking", "Thinking", "A little space for a thoughtful answer.", "?"],
+  ["listening", "Listening", "You have my attention.", "≋"],
+  ["working", "Working", "One gentle step at a time.", "↻"],
   ["success", "Success", "Small steps. Beautiful progress.", "✦"],
-  ["sleep", "Rest", "Folded into stillness. Ready when you are.", "☾"],
+  ["sleep", "Rest", "Folded into stillness. Ready when you are.", "Zz"],
 ];
 const STATE_LIGHTS = {
   idle: { color: "#efb7c7", back: "#b9c7a5", intensity: 0.48 },

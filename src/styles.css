@@ -4272,3 +4272,30 @@ em {
     grid-template-columns: 190px minmax(650px, 1fr) 160px;
   }
 }
+
+
+/* Literal emotion icon tuning --------------------------------------------- */
+.state-thinking .state-glyph,
+.state-thinking .moment-symbol {
+  font-weight: 700;
+}
+
+.state-listening .state-glyph {
+  font-size: 15px;
+}
+
+.state-working .state-glyph {
+  font-size: 15px;
+}
+
+.state-sleep .state-glyph {
+  font-size: 9px;
+  letter-spacing: -0.5px;
+  text-transform: none;
+}
+
+.state-sleep .moment-symbol {
+  font-size: 15px;
+  letter-spacing: -0.6px;
+  text-transform: none;
+}
