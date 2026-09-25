@@ -1627,6 +1627,8 @@ em {
 .focus-mode .scene-topline,
 .focus-mode .presence-status-chip,
 .focus-mode .interaction-hint,
+.focus-mode .garden-statusbar,
+.focus-mode .interaction-toast,
 .focus-mode .scene-caption,
 .focus-mode .scene-tools,
 .focus-mode .presence-lab,
@@ -1644,8 +1646,11 @@ em {
 }
 
 .focus-mode .garden {
-  width: 100%;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
   height: 100vh;
+  min-height: 100vh;
   margin: 0;
 }
 
@@ -2061,6 +2066,11 @@ em {
 
 .focus-mode .garden {
   display: block;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
 }
 
 .focus-mode .canvas-wrap {
@@ -2197,4 +2207,16 @@ em {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+
+/* Focus hard-reset guard: keep every focus layer on the same viewport. */
+.focus-mode .canvas-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.focus-mode .garden-statusbar,
+.focus-mode .interaction-toast {
+  display: none;
 }
