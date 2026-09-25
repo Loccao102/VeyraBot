@@ -642,6 +642,57 @@ function Ripples({ state, motion, bloom }) {
   );
 }
 
+function TouchRipple({ ripple, reducedMotion }) {
+  const ref = useRef();
+
+  useFrame(() => {
+    if (!ref.current) return;
+    const age = THREE.MathUtils.clamp(
+      ((typeof performance !== "undefined" ? performance.now() : Date.now()) -
+        ripple.startedAt) /
+        ripple.duration,
+      0,
+      1,
+    );
+    const ease = THREE.MathUtils.smoothstep(age, 0, 1);
+    const pulse = reducedMotion ? 0.55 : 0.55 + ease * 3.9;
+    ref.current.scale.setScalar(pulse);
+    ref.current.material.opacity =
+      Math.sin(Math.PI * age) * (reducedMotion ? 0.14 : 0.3);
+  });
+
+  return (
+    <mesh
+      ref={ref}
+      position={[ripple.position[0], -1.105, ripple.position[2]]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <ringGeometry args={[0.055, 0.068, 56]} />
+      <meshBasicMaterial
+        color="#7f9987"
+        transparent
+        opacity={0}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+function TouchRipples({ ripples = [], reducedMotion }) {
+  return (
+    <group>
+      {ripples.map((ripple) => (
+        <TouchRipple
+          key={ripple.id}
+          ripple={ripple}
+          reducedMotion={reducedMotion}
+        />
+      ))}
+    </group>
+  );
+}
+
 function FloatingPetals({ state, speed, motion, bloom }) {
   const ref = useRef();
   const phase = useRef(0);
@@ -956,17 +1007,75 @@ export default function SenModel({
   presencePhase = "day",
   presenceWeather = "clear",
   presenceMood = "bright",
+  interaction = null,
+  interactionEnabled = true,
 }) {
   const root = useRef(),
     awake = useRef(),
     head = useRef(),
     crystal = useRef(),
     budLight = useRef();
+  const sidePetals = useRef({});
   const bloom = useRef(state === "sleep" ? 0 : energy / 100);
+  const reaction = interaction?.reaction ?? {
+    type: "none",
+    target: null,
+    intensity: 0,
+    startedAt: 0,
+    duration: 1,
+  };
+  const hoveredTarget = interaction?.hoveredTarget ?? null;
+  const heldTarget = interaction?.heldTarget ?? null;
+  const characterInteractionEnabled =
+    interactionEnabled && state !== "sleep" && energy > 28;
+
+  const setCursor = (cursor) => {
+    if (typeof document !== "undefined") document.body.style.cursor = cursor;
+  };
+  const beginHover = (event, target) => {
+    if (!characterInteractionEnabled) return;
+    event.stopPropagation();
+    interaction?.setHoveredTarget(target);
+    setCursor("pointer");
+  };
+  const endHover = (event, target) => {
+    if (!characterInteractionEnabled) return;
+    event.stopPropagation();
+    if (interaction?.hoveredTarget === target) {
+      interaction.setHoveredTarget(null);
+    }
+    setCursor("");
+  };
+
+  useLayoutEffect(
+    () => () => {
+      if (typeof document !== "undefined") document.body.style.cursor = "";
+    },
+    [],
+  );
   const cfg = SEN_STATES[state] || SEN_STATES.idle;
   const motion = reducedMotion ? 0 : 1;
   useFrame(({ clock, pointer }, delta) => {
     const t = clock.elapsedTime;
+    const interactionNow =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    const reactionAge =
+      reaction.type === "none" || !reaction.startedAt || reaction.type === "core_hold"
+        ? 0
+        : THREE.MathUtils.clamp(
+            (interactionNow - reaction.startedAt) /
+              Math.max(1, reaction.duration),
+            0,
+            1,
+          );
+    const reactionEnvelope =
+      reaction.type === "none"
+        ? 0
+        : reaction.type === "core_hold"
+          ? 1
+          : Math.sin(Math.PI * reactionAge) * (reaction.intensity ?? 1);
+    const headHover = hoveredTarget === "head" ? 1 : 0;
+    const headPat = reaction.type === "head_pat" ? reactionEnvelope : 0;
     const phaseCalm =
       presencePhase === "night"
         ? 0.48
@@ -999,7 +1108,8 @@ export default function SenModel({
       (Math.sin(t * 0.17) * 0.075 +
         Math.sin(t * 0.071 + 1.8) * 0.045) *
       autonomous *
-      presenceCalm;
+      presenceCalm *
+      (headHover ? 0.18 : 1);
     const idleTilt =
       Math.sin(t * 0.11 + 0.6) * 0.026 * autonomous * presenceCalm;
     const idleBreath =
@@ -1042,32 +1152,61 @@ export default function SenModel({
     head.current.position.y = damp(
       head.current.position.y,
       -0.13 * folded +
-        Math.sin(t * 0.27) * 0.014 * autonomous * presenceCalm,
-      2,
+        Math.sin(t * 0.27) * 0.014 * autonomous * presenceCalm -
+        headPat * 0.045,
+      headHover ? 4.2 : 2,
       delta,
     );
     head.current.rotation.z = damp(
       head.current.rotation.z,
       cfg.tilt +
         Math.sin(t * 0.65) * 0.016 * motion +
-        idleTilt,
-      2.2,
+        idleTilt +
+        Math.sin(reactionAge * Math.PI * 3) * headPat * 0.065,
+      headHover ? 4.5 : 2.2,
       delta,
     );
     head.current.rotation.y = damp(
       head.current.rotation.y,
-      pointer.x * 0.12 * motion + idleLook,
-      2.4,
+      pointer.x * (headHover ? 0.21 : 0.12) * motion + idleLook,
+      headHover ? 5 : 2.4,
       delta,
     );
     head.current.rotation.x = damp(
       head.current.rotation.x,
       0.14 * folded -
-        pointer.y * 0.045 * motion * emergence +
-        Math.sin(t * 0.13 + 2.2) * 0.018 * autonomous * presenceCalm,
-      2.4,
+        pointer.y * (headHover ? 0.072 : 0.045) * motion * emergence +
+        Math.sin(t * 0.13 + 2.2) * 0.018 * autonomous * presenceCalm +
+        headPat * 0.075,
+      headHover ? 5 : 2.4,
       delta,
     );
+
+    [-1, 1].forEach((side) => {
+      const petalGroup = sidePetals.current[side];
+      if (!petalGroup) return;
+      const target = `petal:${side}`;
+      const petalHover = hoveredTarget === target ? 1 : 0;
+      const petalTouch =
+        reaction.type === "petal_touch" && reaction.target === target
+          ? reactionEnvelope
+          : 0;
+      const flutter =
+        Math.sin(reactionAge * Math.PI * 4) * petalTouch * 0.105 * side;
+
+      petalGroup.rotation.z = damp(
+        petalGroup.rotation.z,
+        side * petalHover * 0.035 + flutter,
+        8,
+        delta,
+      );
+      petalGroup.position.y = damp(
+        petalGroup.position.y,
+        petalHover * 0.014 + petalTouch * 0.025,
+        8,
+        delta,
+      );
+    });
     const wakeFlash =
       state === "sleep"
         ? 0
@@ -1078,21 +1217,56 @@ export default function SenModel({
       state === "sleep"
         ? 0.12 + (Math.sin(t * 1.05) + 1) * 0.035 * motion
         : 0.22 + 0.78 * bloom.current + wakeFlash * 0.55;
+    const coreHovered = hoveredTarget === "core";
+    const coreHeld = heldTarget === "core";
+    const coreRelease =
+      reaction.type === "core_release" ? reactionEnvelope : 0;
+    const coreInteractionGlow =
+      (coreHovered ? 0.28 : 0) +
+      (coreHeld ? 1.1 + Math.sin(t * 5.2) * 0.16 : 0) +
+      coreRelease * 0.45;
+
     crystal.current.material.emissiveIntensity = damp(
       crystal.current.material.emissiveIntensity,
-      (state === "sleep" ? 0.18 : cfg.glow) * coreControl * sleepingPulse,
-      4,
+      (state === "sleep" ? 0.18 : cfg.glow) * coreControl * sleepingPulse +
+        coreInteractionGlow,
+      coreHeld ? 8 : 4,
       delta,
     );
     budLight.current.intensity = damp(
       budLight.current.intensity,
       (state === "sleep"
         ? 0.22 + Math.sin(t * 1.05) * 0.035 * motion
-        : 0.32 + bloom.current * 0.52 + wakeFlash * 0.72) * coreControl,
-      4,
+        : 0.32 + bloom.current * 0.52 + wakeFlash * 0.72) *
+        coreControl +
+        coreInteractionGlow * 0.62,
+      coreHeld ? 8 : 4,
       delta,
     );
-    crystal.current.rotation.y += delta * 0.25 * motion;
+    const coreScale =
+      1 +
+      (coreHovered ? 0.035 : 0) +
+      (coreHeld ? 0.09 + Math.sin(t * 5.2) * 0.018 : 0) +
+      coreRelease * 0.045;
+    crystal.current.scale.x = damp(
+      crystal.current.scale.x,
+      0.2 * coreScale,
+      8,
+      delta,
+    );
+    crystal.current.scale.y = damp(
+      crystal.current.scale.y,
+      0.29 * coreScale,
+      8,
+      delta,
+    );
+    crystal.current.scale.z = damp(
+      crystal.current.scale.z,
+      0.17 * coreScale,
+      8,
+      delta,
+    );
+    crystal.current.rotation.y += delta * (coreHeld ? 0.72 : 0.25) * motion;
   });
   return (
     <group ref={root}>
@@ -1134,6 +1308,26 @@ export default function SenModel({
             />
           </mesh>
           <Eyes state={state} motion={motion} bloom={bloom} />
+          {characterInteractionEnabled && (
+            <mesh
+              position={[0, 0.8, 0.24]}
+              scale={[0.7, 0.61, 0.48]}
+              onPointerOver={(event) => beginHover(event, "head")}
+              onPointerOut={(event) => endHover(event, "head")}
+              onClick={(event) => {
+                event.stopPropagation();
+                interaction?.patHead();
+              }}
+            >
+              <sphereGeometry args={[1, 18, 12]} />
+              <meshBasicMaterial
+                transparent
+                opacity={0}
+                depthWrite={false}
+                colorWrite={false}
+              />
+            </mesh>
+          )}
           {[-1, 1].map((side) => (
             <Petal
               key={side}
@@ -1148,7 +1342,12 @@ export default function SenModel({
 
         {/* Petal body: no mechanical joints, hands or mouth. */}
         {[-1, 1].map((side) => (
-          <group key={side}>
+          <group
+            key={side}
+            ref={(node) => {
+              sidePetals.current[side] = node;
+            }}
+          >
             <Petal
               position={[0, -0.85, 0.03]}
               rotation={[0, side * 0.15, -side * 0.32]}
@@ -1177,12 +1376,61 @@ export default function SenModel({
               color={JADE}
               leaf
             />
+            {characterInteractionEnabled && (
+              <mesh
+                position={[side * 0.45, -0.11, 0.2]}
+                scale={[0.48, 0.62, 0.34]}
+                onPointerOver={(event) =>
+                  beginHover(event, `petal:${side}`)
+                }
+                onPointerOut={(event) =>
+                  endHover(event, `petal:${side}`)
+                }
+                onClick={(event) => {
+                  event.stopPropagation();
+                  interaction?.touchPetal(side);
+                }}
+              >
+                <sphereGeometry args={[1, 14, 10]} />
+                <meshBasicMaterial
+                  transparent
+                  opacity={0}
+                  depthWrite={false}
+                  colorWrite={false}
+                />
+              </mesh>
+            )}
           </group>
         ))}
         <mesh
           ref={crystal}
           position={[0, -0.1, 0.31]}
           scale={[0.2, 0.29, 0.17]}
+          onPointerOver={(event) => {
+            if (!characterInteractionEnabled) return;
+            event.stopPropagation();
+            interaction?.setHoveredTarget("core");
+            setCursor("pointer");
+          }}
+          onPointerOut={(event) => {
+            if (!characterInteractionEnabled) return;
+            event.stopPropagation();
+            if (interaction?.heldTarget === "core") interaction.endCoreHold();
+            if (interaction?.hoveredTarget === "core") {
+              interaction.setHoveredTarget(null);
+            }
+            setCursor("");
+          }}
+          onPointerDown={(event) => {
+            if (!characterInteractionEnabled) return;
+            event.stopPropagation();
+            interaction?.beginCoreHold();
+          }}
+          onPointerUp={(event) => {
+            if (!characterInteractionEnabled) return;
+            event.stopPropagation();
+            interaction?.endCoreHold();
+          }}
         >
           <octahedronGeometry args={[1, 0]} />
           <meshPhysicalMaterial
@@ -1243,6 +1491,35 @@ export default function SenModel({
       ))}
       <BloomAura bloom={bloom} motion={motion} state={state} />
       <Ripples state={state} motion={motion} bloom={bloom} />
+      <TouchRipples
+        ripples={interaction?.ripples ?? []}
+        reducedMotion={reducedMotion}
+      />
+      {interactionEnabled && (
+        <mesh
+          position={[0, -1.108, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          onPointerOver={() => setCursor("crosshair")}
+          onPointerOut={() => setCursor("")}
+          onClick={(event) => {
+            event.stopPropagation();
+            interaction?.touchWater([
+              event.point.x,
+              event.point.y,
+              event.point.z,
+            ]);
+          }}
+        >
+          <circleGeometry args={[1.9, 64]} />
+          <meshBasicMaterial
+            transparent
+            opacity={0}
+            depthWrite={false}
+            colorWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
     </group>
   );
 }

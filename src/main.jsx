@@ -9,6 +9,7 @@ import {
 import SenModel from "./SenModel";
 import EnvironmentEffects from "./EnvironmentEffects";
 import usePresence from "./usePresence";
+import useInteractionManager from "./useInteractionManager";
 import useVeyraAgent from "./useVeyraAgent";
 import "./styles.css";
 
@@ -188,6 +189,8 @@ function Scene({
   presence,
   weather,
   mood,
+  interaction,
+  interactionEnabled,
 }) {
   return (
     <>
@@ -214,6 +217,8 @@ function Scene({
           presencePhase={presence.key}
           presenceWeather={weather.key}
           presenceMood={mood.key}
+          interaction={interaction}
+          interactionEnabled={interactionEnabled}
         />
       </Suspense>
       <ContactShadows
@@ -249,6 +254,7 @@ function App() {
   const [presenceLabOpen, setPresenceLabOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const presence = usePresence();
+  const interaction = useInteractionManager();
   const {
     state,
     setState,
@@ -366,6 +372,24 @@ function App() {
             <span className="presence-status-separator">·</span>
             <span className="presence-status-mood">{presence.mood.label}</span>
           </div>
+          <div
+            className={`interaction-hint ${
+              interaction.reaction.type !== "none" ? "active" : ""
+            }`}
+            aria-live="polite"
+          >
+            <span>P2 · PLAY</span>
+            <strong>
+              {interaction.reaction.label ||
+                (interaction.hoveredTarget === "core"
+                  ? "Hold Sen’s inner light."
+                  : interaction.hoveredTarget?.startsWith("petal:")
+                    ? "This petal is listening."
+                    : interaction.hoveredTarget === "head"
+                      ? "Sen is looking back."
+                      : "Touch Sen · petals · core · water")}
+            </strong>
+          </div>
           <div className="canvas-wrap">
             <SceneBoundary>
               <Canvas
@@ -391,6 +415,8 @@ function App() {
                   presence={presence.phase}
                   weather={presence.weather}
                   mood={presence.mood}
+                  interaction={interaction}
+                  interactionEnabled={!isRunning}
                 />
               </Canvas>
             </SceneBoundary>
@@ -627,7 +653,7 @@ function App() {
           SEN — VIETNAMESE LOTUS AI COMPANION
         </span>
         <span>A more mindful tomorrow, together.</span>
-        <span>P1 · PRESENCE · v0.7</span>
+        <span>P2.1 · PLAY · v0.8</span>
       </footer>
     </main>
   );
