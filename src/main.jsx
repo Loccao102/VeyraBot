@@ -174,8 +174,8 @@ function PersonalPanel({ personal, onClose }) {
           <small>P3 · MY SEN</small>
           <strong>{personal.levelName}</strong>
           <span>
-            Level {personal.level} · Together for {personal.ageDays} day
-            {personal.ageDays === 1 ? "" : "s"}
+            Level {personal.level} · {personal.gardenStyleLabel} · Together for{" "}
+            {personal.ageDays} day{personal.ageDays === 1 ? "" : "s"}
           </span>
         </div>
         <button type="button" onClick={onClose} aria-label="Close My Sen">
@@ -211,6 +211,28 @@ function PersonalPanel({ personal, onClose }) {
         <div>
           <small>FOCUS</small>
           <strong>{Math.round(personal.profile.focusMinutes)}m</strong>
+        </div>
+      </div>
+
+      <div className="personal-affinity">
+        <div className="personal-affinity-head">
+          <small>HOW YOUR GARDEN IS LEARNING</small>
+          <strong>{personal.gardenStyleLabel}</strong>
+        </div>
+        <div className="personal-affinity-bars">
+          {[
+            ["Focus", personal.affinities.normalized.focus],
+            ["Thought", personal.affinities.normalized.reflection],
+            ["Explore", personal.affinities.normalized.explorer],
+            ["Night", personal.affinities.normalized.nocturne],
+          ].map(([label, value]) => (
+            <span key={label}>
+              <em>{label}</em>
+              <i>
+                <b style={{ width: `${Math.round(value * 100)}%` }} />
+              </i>
+            </span>
+          ))}
         </div>
       </div>
 
@@ -523,6 +545,8 @@ function App() {
   const ritual = useRitualGarden();
   const personal = usePersonalGarden({
     existingThoughts: ritual.thoughtCount,
+    currentPhase:
+      presence.phaseMode === "auto" ? presence.phase.key : null,
   });
   const current = STATES.find((item) => item[0] === state);
   useEffect(() => {
@@ -601,7 +625,7 @@ function App() {
 
   return (
     <main
-      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key} garden-level-${personal.level} ${
+      className={`app-shell state-${state} time-${presence.phase.key} weather-${presence.weather.key} garden-level-${personal.level} garden-style-${personal.gardenStyle} ${
         ritual.focus.active ? "focus-mode" : ""
       }`}
     >
@@ -851,13 +875,16 @@ function App() {
           <section className="control-panel" aria-label="Character controls">
             <div className="eyebrow">A MOMENT, YOUR WAY</div>
             {[
-              ["Petal drift", halo, setHalo],
-              ["Inner warmth", core, setCore],
-              ["Gentle float", hover, setHover],
-            ].map(([label, value, setter]) => (
+              ["Petal drift", halo, setHalo, "Aura + particles"],
+              ["Inner warmth", core, setCore, "Core + inner light"],
+              ["Gentle float", hover, setHover, "Float + body sway"],
+            ].map(([label, value, setter, hint]) => (
               <label key={label}>
                 <span>
-                  {label}
+                  <span>
+                    {label}
+                    <small>{hint}</small>
+                  </span>
                   <b>{value.toFixed(1)}</b>
                 </span>
                 <input
@@ -866,6 +893,7 @@ function App() {
                   max="2"
                   step=".1"
                   value={value}
+                  style={{ "--control-level": `${value * 50}%` }}
                   onChange={(event) => setter(+event.target.value)}
                 />
               </label>
