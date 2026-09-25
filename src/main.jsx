@@ -383,6 +383,7 @@ function Scene({
           interaction={interaction}
           interactionEnabled={interactionEnabled}
           ritual={ritual}
+          focusActive={focusActive}
         />
       </Suspense>
       <ContactShadows
