@@ -1723,6 +1723,473 @@ em {
   }
 }
 
+/* P2 visual cohesion pass -------------------------------------------------- */
+.garden-statusbar {
+  position: absolute;
+  z-index: 6;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 42px);
+  padding: 6px 10px;
+  border: 1px solid #d9c8bd85;
+  border-radius: 999px;
+  background: #fffaf3b5;
+  box-shadow: 0 8px 24px #75594d0b;
+  backdrop-filter: blur(10px);
+  color: #826f68;
+  pointer-events: none;
+}
+
+.garden-status-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.garden-status-presence i {
+  font-style: normal;
+  font-size: 10px;
+  color: #a66d7b;
+}
+
+.garden-status-presence b,
+.garden-status-play {
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.9px;
+  white-space: nowrap;
+}
+
+.garden-status-presence em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: normal 6px/1 "Segoe UI", sans-serif;
+  letter-spacing: 0.8px;
+  color: #9b877b;
+}
+
+.garden-status-divider {
+  width: 1px;
+  height: 11px;
+  background: #d8c7bd;
+  opacity: 0.8;
+}
+
+.garden-status-play {
+  color: #9a6574;
+}
+
+.garden-status-play b {
+  margin-left: 4px;
+  font: inherit;
+  color: #806e68;
+}
+
+.time-night .garden-statusbar {
+  border-color: #ac9ca983;
+  background: #6d6370a8;
+  color: #f0e6ec;
+}
+
+.time-night .garden-status-presence em,
+.time-night .garden-status-play,
+.time-night .garden-status-play b {
+  color: #dfd0da;
+}
+
+.time-night .garden-status-divider {
+  background: #b8a7b3;
+}
+
+.interaction-toast {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 63px;
+  transform: translate(-50%, 5px);
+  max-width: min(340px, calc(100% - 40px));
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fffaf3c9;
+  box-shadow: 0 9px 24px #7253460c;
+  backdrop-filter: blur(9px);
+  color: #806c66;
+  font-size: 7px;
+  letter-spacing: 0.45px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    background 0.22s ease;
+}
+
+.interaction-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.interaction-toast.discovery-found {
+  background: #f3dfe5df;
+  color: #865d6b;
+  box-shadow:
+    0 10px 25px #75505d18,
+    0 0 24px #d8a8b627;
+}
+
+.time-night .interaction-toast {
+  background: #6f6472c2;
+  color: #f1e7ed;
+}
+
+.scene-tools {
+  bottom: 7px;
+  gap: 4px;
+  width: max-content;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  padding: 4px;
+  border: 1px solid #d9cbc18a;
+  border-radius: 999px;
+  background: #fffaf2a8;
+  box-shadow: 0 8px 22px #7356480b;
+  backdrop-filter: blur(9px);
+}
+
+.scene-tools button {
+  min-width: 0;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #847269;
+  font-size: 7px;
+  line-height: 1;
+}
+
+.scene-tools button:hover,
+.scene-tools button.active {
+  background: #f1e3e4;
+  color: #8f5869;
+}
+
+.time-night .scene-tools {
+  border-color: #ad9da98a;
+  background: #6a606ca8;
+}
+
+.time-night .scene-tools button {
+  color: #e8dce4;
+}
+
+.time-night .scene-tools button:hover,
+.time-night .scene-tools button.active {
+  background: #8b7485a8;
+  color: #fff5fa;
+}
+
+.ritual-panel,
+.presence-lab {
+  border-color: #dbcac1a6;
+  background: #fffaf4e5;
+  box-shadow: 0 18px 48px #6a4e4215;
+  backdrop-filter: blur(18px);
+}
+
+.ritual-panel {
+  right: 12px;
+  bottom: 46px;
+  width: min(296px, calc(100% - 24px));
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.ritual-panel-head {
+  margin-bottom: 11px;
+}
+
+.ritual-panel-head strong {
+  font-size: 14px;
+}
+
+.thought-form {
+  gap: 7px;
+}
+
+.thought-form textarea {
+  min-height: 72px;
+  border-color: #e7dcd4;
+  border-radius: 10px;
+  background: #fffdf9bf;
+}
+
+.ritual-divider {
+  margin: 11px 0;
+  opacity: 0.72;
+}
+
+.focus-options {
+  gap: 5px;
+}
+
+.focus-options button,
+.capture-moment-button,
+.thought-form button {
+  border-color: #ded0c8;
+  background: #fffaf5a8;
+}
+
+.thought-card {
+  bottom: 72px;
+  width: min(270px, calc(100% - 30px));
+  border-color: #d9c8c6a0;
+  border-radius: 14px;
+  background: #fffaf4e5;
+  box-shadow: 0 15px 38px #6f4d4312;
+}
+
+/* Focus is one calm composition, not three distant UI islands. */
+.focus-hud {
+  position: fixed;
+  z-index: 40;
+  inset: auto auto auto 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 8px 7px 10px;
+  border: 1px solid #d7c5bc91;
+  border-radius: 999px;
+  background: #fffaf4c9;
+  box-shadow: 0 12px 34px #6d514414;
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+
+.focus-hud-brand,
+.focus-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: auto;
+}
+
+.focus-hud-brand {
+  padding-right: 11px;
+  border-right: 1px solid #ddcec5;
+}
+
+.focus-hud-brand svg {
+  width: 22px;
+  color: #aa7481;
+}
+
+.focus-hud-brand span {
+  font-size: 7px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #846f69;
+  white-space: nowrap;
+}
+
+.focus-clock {
+  min-width: 96px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 2px;
+  pointer-events: auto;
+}
+
+.focus-clock strong {
+  font: normal 25px/1 Georgia, serif;
+  color: #6f5a5c;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-clock span {
+  font: normal 7px/1 "Segoe UI", sans-serif;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #9c8880;
+  white-space: nowrap;
+}
+
+.focus-actions {
+  padding-left: 11px;
+  border-left: 1px solid #ddcec5;
+}
+
+.focus-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #806c65;
+  font-size: 7px;
+  backdrop-filter: none;
+}
+
+.focus-actions button:hover {
+  background: #f0e2e2;
+  color: #8f5668;
+}
+
+.app-shell.focus-mode {
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.focus-mode .workspace,
+.focus-mode .garden {
+  height: 100vh;
+  min-height: 100vh;
+}
+
+.focus-mode .garden {
+  display: block;
+}
+
+.focus-mode .canvas-wrap {
+  inset: 0;
+}
+
+.focus-mode .garden-moon {
+  width: min(62vh, 44vw);
+  max-width: none;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  opacity: 0.92;
+}
+
+.focus-mode .garden-ring {
+  width: min(68vh, 49vw);
+  max-width: none;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  opacity: 0.68;
+}
+
+.focus-mode.time-night .focus-hud {
+  border-color: #a898a58f;
+  background: #625966c7;
+  box-shadow: 0 12px 34px #322a351a;
+}
+
+.focus-mode.time-night .focus-hud-brand,
+.focus-mode.time-night .focus-actions {
+  border-color: #928492;
+}
+
+.focus-mode.time-night .focus-clock strong,
+.focus-mode.time-night .focus-clock span,
+.focus-mode.time-night .focus-hud-brand span,
+.focus-mode.time-night .focus-actions button {
+  color: #f0e5ec;
+}
+
+.focus-mode.time-night .focus-actions button:hover {
+  background: #7e6e7da8;
+}
+
+@media (max-width: 680px) {
+  .garden-statusbar {
+    top: 20px;
+    gap: 7px;
+    padding: 5px 8px;
+  }
+
+  .garden-status-presence b,
+  .garden-status-presence em,
+  .garden-status-play {
+    font-size: 5px;
+  }
+
+  .interaction-toast {
+    bottom: 48px;
+    font-size: 6px;
+  }
+
+  .scene-tools {
+    bottom: 3px;
+  }
+
+  .scene-tools button {
+    padding: 5px 7px;
+    font-size: 6px;
+  }
+
+  .ritual-panel {
+    bottom: 42px;
+    border-radius: 14px;
+  }
+
+  .focus-hud {
+    top: 12px;
+    gap: 6px;
+    padding: 6px 7px;
+  }
+
+  .focus-hud-brand {
+    padding-right: 7px;
+  }
+
+  .focus-hud-brand span {
+    display: none;
+  }
+
+  .focus-hud-brand svg {
+    width: 20px;
+  }
+
+  .focus-clock {
+    min-width: 78px;
+    gap: 4px;
+  }
+
+  .focus-clock strong {
+    font-size: 21px;
+  }
+
+  .focus-clock span {
+    display: none;
+  }
+
+  .focus-actions {
+    gap: 3px;
+    padding-left: 7px;
+  }
+
+  .focus-actions button {
+    min-height: 28px;
+    padding: 0 7px;
+    font-size: 6px;
+  }
+
+  .focus-mode .garden-moon {
+    width: min(60vh, 82vw);
+    top: 55%;
+  }
+
+  .focus-mode .garden-ring {
+    width: min(66vh, 90vw);
+    top: 55%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,
