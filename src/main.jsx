@@ -24,6 +24,15 @@ const STATES = [
   ["success", "Success", "Small steps. Beautiful progress.", "✦"],
   ["sleep", "Rest", "Folded into stillness. Ready when you are.", "☾"],
 ];
+const STATE_LIGHTS = {
+  idle: { color: "#efb7c7", back: "#b9c7a5", intensity: 0.48 },
+  thinking: { color: "#c6afff", back: "#e1bd7f", intensity: 0.72 },
+  listening: { color: "#8fd8d0", back: "#c5e5dc", intensity: 0.66 },
+  working: { color: "#a8c98d", back: "#e0b978", intensity: 0.72 },
+  success: { color: "#ffd07b", back: "#f2a9c0", intensity: 0.98 },
+  sleep: { color: "#9ab4e8", back: "#b99bd3", intensity: 0.38 },
+};
+
 const QUICK_COMMANDS = [
   "Continue my project",
   "Check this repo",
@@ -454,6 +463,8 @@ function Scene({
   focusActive,
   personal,
 }) {
+  const stateLight = STATE_LIGHTS[state] ?? STATE_LIGHTS.idle;
+
   return (
     <>
       <EnvironmentEffects
@@ -461,6 +472,20 @@ function Scene({
         weather={weather}
         reducedMotion={reducedMotion}
         sleeping={state === "sleep"}
+      />
+      <pointLight
+        position={[0, 1.15, 2.2]}
+        intensity={stateLight.intensity}
+        distance={5.5}
+        decay={2}
+        color={stateLight.color}
+      />
+      <pointLight
+        position={[0, 1.55, -1.6]}
+        intensity={stateLight.intensity * 0.62}
+        distance={5}
+        decay={2}
+        color={stateLight.back}
       />
       <Suspense
         fallback={
@@ -512,9 +537,6 @@ function Scene({
 }
 
 function App() {
-  const [halo, setHalo] = useState(1),
-    [core, setCore] = useState(1),
-    [hover, setHover] = useState(1);
   const [resetKey, setResetKey] = useState(0);
   const [energy, setEnergy] = useState(72);
   const [blooming, setBlooming] = useState(false);
@@ -734,9 +756,9 @@ function App() {
                 <Scene
                   state={state}
                   energy={energy}
-                  halo={halo}
-                  core={core}
-                  hover={hover}
+                  halo={1.35}
+                  core={1.15}
+                  hover={0.95}
                   reducedMotion={reducedMotion}
                   resetKey={resetKey}
                   presence={presence.phase}
@@ -843,49 +865,17 @@ function App() {
         </section>
 
         <aside className="detail-panel">
-          <div className="detail-head">
-            <div>
-              <small>YOUR SEN</small>
-              <strong>{personal.gardenStyleLabel}</strong>
-            </div>
-            <div className="mini-palette" aria-label="Your Sen palette">
-              {[
-                personal.dna.petalPrimary,
-                personal.dna.petalSoft,
-                personal.dna.leaf,
-                personal.dna.gold,
-              ].map((color) => (
-                <i key={color} style={{ background: color }} />
-              ))}
+          <div className="moment-card">
+            <small>CURRENT MOMENT</small>
+            <div className="moment-symbol">{current[3]}</div>
+            <strong>{current[1]}</strong>
+            <p>{current[2]}</p>
+            <div className="moment-palette" aria-hidden="true">
+              <i />
+              <i />
+              <i />
             </div>
           </div>
-
-          <section className="control-panel" aria-label="Character controls">
-            {[
-              ["Drift", halo, setHalo, "Aura"],
-              ["Warmth", core, setCore, "Core"],
-              ["Float", hover, setHover, "Motion"],
-            ].map(([label, value, setter, hint]) => (
-              <label key={label}>
-                <span>
-                  <span>
-                    <strong>{label}</strong>
-                    <small>{hint}</small>
-                  </span>
-                  <b>{value.toFixed(1)}</b>
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step=".1"
-                  value={value}
-                  style={{ "--control-level": `${value * 50}%` }}
-                  onChange={(event) => setter(+event.target.value)}
-                />
-              </label>
-            ))}
-          </section>
 
           <button
             type="button"
@@ -896,7 +886,11 @@ function App() {
             <span>{state === "sleep" ? "☀" : "☾"}</span>
             <span>
               <strong>{state === "sleep" ? "Wake Sen" : "Rest mode"}</strong>
-              <small>{state === "sleep" ? "Open the lotus again" : "Fold into a quiet bud"}</small>
+              <small>
+                {state === "sleep"
+                  ? "Open the lotus again"
+                  : "Fold into a quiet bud"}
+              </small>
             </span>
           </button>
         </aside>
