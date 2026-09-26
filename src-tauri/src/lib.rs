@@ -83,6 +83,7 @@ pub fn run() {
         .plugin(
             tauri_plugin_autostart::Builder::new()
                 .app_name("Sen")
+                .args(["--minimized"])
                 .build(),
         )
         .plugin(
@@ -101,6 +102,8 @@ pub fn run() {
             get_autostart_enabled,
         ])
         .setup(move |app| {
+            let start_minimized = std::env::args().any(|arg| arg == "--minimized");
+
             let show_hide =
                 MenuItem::with_id(app, "show_hide", "Show / Hide Sen", true, None::<&str>)?;
             let pin =
@@ -125,6 +128,10 @@ pub fn run() {
             app.global_shortcut().register(shortcut)?;
 
             if let Some(window) = app.get_webview_window("main") {
+                if start_minimized {
+                    let _ = window.hide();
+                }
+
                 let window_on_close = window.clone();
                 window.on_window_event(move |event| {
                     if let WindowEvent::CloseRequested { api, .. } = event {
