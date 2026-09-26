@@ -3,8 +3,6 @@ name: Build Sen Windows
 on:
   workflow_dispatch:
   push:
-    branches:
-      - feat/sen-desktop-v02
     tags:
       - "sen-desktop-v*"
 
