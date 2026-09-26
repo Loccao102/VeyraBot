@@ -433,12 +433,10 @@ fn append_limited(buffer: &Arc<Mutex<String>>, value: &str, limit: usize) {
         return;
     }
 
-    output.push_str(value);
+    let remaining = limit.saturating_sub(output.len());
+    let clipped: String = value.chars().take(remaining.min(20_000)).collect();
+    output.push_str(&clipped);
     output.push('\n');
-
-    if output.len() > limit {
-        output.truncate(limit);
-    }
 }
 
 fn agent_policy_prompt(task: &str, approved_sensitive: bool) -> String {
