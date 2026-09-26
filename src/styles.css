@@ -4352,6 +4352,7 @@ em {
 }
 
 .desktop-card {
+  position: relative;
   width: 100%;
   min-height: calc(100vh - 20px);
   display: grid;
