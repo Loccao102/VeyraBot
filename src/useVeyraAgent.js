@@ -2,7 +2,10 @@ import { useRef, useState } from "react";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export default function useVeyraAgent() {
+export default function useVeyraAgent({
+  executeCommand = null,
+  cancelExecution = null,
+} = {}) {
   const [state, setState] = useState("idle");
   const [command, setCommand] = useState("");
   const [message, setMessage] = useState("Ready when you are.");
@@ -17,6 +20,20 @@ export default function useVeyraAgent() {
     ]);
   };
 
+  const finishSuccess = async (id, response) => {
+    if (id !== runId.current) return;
+
+    setState("success");
+    setMessage(response);
+    pushHistory("sen", response);
+    await sleep(900);
+
+    if (id !== runId.current) return;
+    setState("idle");
+    setMessage("I’m here, whenever you’re ready.");
+    setIsRunning(false);
+  };
+
   const runCommand = async (rawCommand = command) => {
     const value = rawCommand.trim();
     if (!value || isRunning) return;
@@ -27,37 +44,57 @@ export default function useVeyraAgent() {
     pushHistory("user", value);
 
     setState("listening");
-    setMessage("I’m listening. Let’s take this one step at a time.");
-    await sleep(420);
+    setMessage("I’m listening.");
+    await sleep(220);
     if (id !== runId.current) return;
 
     setState("thinking");
-    setMessage("Giving your idea a little thought…");
-    await sleep(1050);
+    setMessage(
+      executeCommand
+        ? "Reading the workspace and choosing the next action…"
+        : "Giving your idea a little thought…",
+    );
+    await sleep(executeCommand ? 420 : 900);
     if (id !== runId.current) return;
 
     setState("working");
-    setMessage("Putting the next steps together…");
-    await sleep(1800);
+    setMessage(
+      executeCommand
+        ? "Working inside your selected workspace…"
+        : "Putting the next steps together…",
+    );
+
+    if (executeCommand) {
+      try {
+        const response = await executeCommand(value);
+        await finishSuccess(id, response || "Task completed.");
+      } catch (error) {
+        if (id !== runId.current) return;
+        const detail =
+          typeof error === "string"
+            ? error
+            : error?.message || "The local agent could not finish this task.";
+        setState("idle");
+        setMessage(detail);
+        pushHistory("sen", detail);
+        setIsRunning(false);
+      }
+      return;
+    }
+
+    await sleep(1500);
     if (id !== runId.current) return;
 
-    setState("success");
     const response = buildDemoResponse(value);
-    setMessage(response);
-    pushHistory("sen", response);
-    await sleep(1200);
-    if (id !== runId.current) return;
-
-    setState("idle");
-    setMessage("I’m here, whenever you’re ready.");
-    setIsRunning(false);
+    await finishSuccess(id, response);
   };
 
   const cancel = () => {
     runId.current += 1;
+    Promise.resolve(cancelExecution?.()).catch(() => {});
     setIsRunning(false);
     setState("idle");
-    setMessage("We can pause here. I’m ready when you are.");
+    setMessage("Stopped. I’m ready for the next instruction.");
   };
 
   const startVoiceInput = () => {
@@ -115,11 +152,11 @@ function buildDemoResponse(command) {
   const q = command.toLowerCase();
 
   if (q.includes("videoget")) {
-    return "For VideoGet, I would begin with the current discovery flow and recent changes. This preview demonstrates my states; project tools are not connected yet.";
+    return "For VideoGet, I would begin with the current discovery flow and recent changes. This browser preview is not connected to local project tools.";
   }
 
   if (q.includes("github") || q.includes("repo")) {
-    return "Repository task understood. I would inspect status, recent commits, open work, then choose the smallest safe next action.";
+    return "Repository task understood. In the desktop app I can inspect a selected local Git workspace before choosing the next action.";
   }
 
   if (q.includes("design") || q.includes("ui")) {
@@ -127,8 +164,8 @@ function buildDemoResponse(command) {
   }
 
   if (q.includes("continue") || q.includes("làm tiếp")) {
-    return "I would recover the active project, last task, Git state and recent memory before continuing.";
+    return "In the desktop app I can recover the selected workspace, Git state and recent commits before continuing.";
   }
 
-  return "Task understood. The next milestone is connecting this lifecycle to real local tools, memory and coding agents.";
+  return "Task understood. Open the desktop build and choose a workspace to hand this to a local coding agent.";
 }

@@ -4355,7 +4355,7 @@ em {
   width: 100%;
   min-height: calc(100vh - 20px);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   overflow: hidden;
   border: 1px solid var(--desktop-border);
   border-radius: 26px;
@@ -4684,5 +4684,152 @@ em {
 
   .desktop-presence > span:last-child {
     display: none;
+  }
+}
+
+
+/* Sen Desktop v0.3 · local workspace bridge ------------------------------- */
+.desktop-workspace {
+  min-height: 50px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--desktop-border) 66%, transparent);
+  background: color-mix(in srgb, var(--desktop-card) 78%, transparent);
+}
+
+.desktop-workspace-picker {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--desktop-ink);
+  text-align: left;
+}
+
+.desktop-workspace-picker > span {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--desktop-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--state-soft) 52%, var(--desktop-card));
+  color: var(--state-accent, #c97f98);
+  font-size: 12px;
+}
+
+.desktop-workspace-picker > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.desktop-workspace-picker small {
+  color: var(--desktop-muted);
+  font-size: 5px;
+  letter-spacing: 1.15px;
+}
+
+.desktop-workspace-picker strong {
+  overflow: hidden;
+  color: var(--desktop-ink);
+  font: normal 10px/1.2 Georgia, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-workspace-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  color: var(--desktop-muted);
+  font-size: 6px;
+}
+
+.desktop-workspace-meta i {
+  font-style: normal;
+  opacity: 0.45;
+}
+
+.desktop-workspace-meta .dirty {
+  color: #a77955;
+}
+
+.desktop-workspace-meta .clean {
+  color: #6f957b;
+}
+
+.desktop-agent-chip {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid var(--desktop-border);
+  border-radius: 999px;
+  color: var(--desktop-muted);
+  font-size: 6px;
+  white-space: nowrap;
+}
+
+.desktop-agent-chip > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b59a91;
+}
+
+.desktop-agent-chip.ready {
+  border-color: #8fa99770;
+  color: #65836e;
+}
+
+.desktop-agent-chip.ready > span {
+  background: #79a083;
+  box-shadow: 0 0 9px #79a0836b;
+}
+
+.desktop-agent-chip.missing > span {
+  background: #b79286;
+}
+
+.time-night .desktop-workspace {
+  background: #1b1622a8;
+}
+
+.time-night .desktop-workspace-meta .clean,
+.time-night .desktop-agent-chip.ready {
+  color: #9bc7aa;
+}
+
+.time-night .desktop-workspace-meta .dirty {
+  color: #d4ac83;
+}
+
+@media (max-width: 455px) {
+  .desktop-workspace {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .desktop-workspace-meta {
+    display: none;
+  }
+
+  .desktop-agent-chip {
+    padding-inline: 6px;
+    font-size: 0;
+  }
+
+  .desktop-agent-chip::after {
+    content: "Agent";
+    font-size: 6px;
   }
 }
