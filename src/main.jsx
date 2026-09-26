@@ -1,4 +1,4 @@
-import React, { Component, Suspense, useEffect, useState } from "react";
+import React, { Component, Suspense, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Canvas } from "@react-three/fiber";
 import {
@@ -51,6 +51,44 @@ const QUICK_COMMANDS = [
   "Check this repo",
   "Explore a design",
 ];
+
+const DESKTOP_TASK_HISTORY_KEY = "sen.desktop.task-history.v1";
+
+function classifySensitiveTask(task) {
+  const checks = [
+    {
+      pattern: /\b(push|force[- ]?push|deploy|publish|release|production|prod)\b/i,
+      reason: "This may publish, deploy, or send changes outside the local workspace.",
+    },
+    {
+      pattern: /\b(delete|remove|drop|truncate|reset\s+--hard|clean\s+-fd)\b|x[oó]a|xo[aá]/i,
+      reason: "This may delete data or perform a destructive repository operation.",
+    },
+    {
+      pattern: /\b(database|migration|migrate|schema|production\s+db|sql\s+server)\b|c[oơ]\s+s[oở]\s+d[uữ]\s+li[eệ]u/i,
+      reason: "This may modify a database or schema.",
+    },
+    {
+      pattern: /\b(global\s+(package|tool)|install\s+-g|registry|system\s+settings|windows\s+service)\b/i,
+      reason: "This may change the machine outside the selected workspace.",
+    },
+  ];
+
+  const reasons = checks
+    .filter(({ pattern }) => pattern.test(task))
+    .map(({ reason }) => reason);
+
+  return reasons.length ? { reasons } : null;
+}
+
+function readDesktopTaskHistory() {
+  try {
+    const value = JSON.parse(localStorage.getItem(DESKTOP_TASK_HISTORY_KEY) || "[]");
+    return Array.isArray(value) ? value.slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
 
 const PRESENCE_ICONS = {
   dawn: "☼",
@@ -561,6 +599,22 @@ function DesktopApp() {
   const [workspace, setWorkspace] = useState(null);
   const [workspaceBusy, setWorkspaceBusy] = useState(false);
   const [localAgents, setLocalAgents] = useState([]);
+  const [agentEvents, setAgentEvents] = useState([]);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [consoleMode, setConsoleMode] = useState("live");
+  const [pendingApproval, setPendingApproval] = useState(null);
+  const [taskHistory, setTaskHistory] = useState(readDesktopTaskHistory);
+  const eventCursor = useRef(0);
+  const approvedTasks = useRef(new Set());
+  const cancelRequested = useRef(false);
+
+  const saveTaskHistory = (entry) => {
+    setTaskHistory((previous) => {
+      const next = [entry, ...previous].slice(0, 20);
+      localStorage.setItem(DESKTOP_TASK_HISTORY_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const refreshWorkspace = async (path = workspacePath) => {
     if (!IS_TAURI || !path) {
@@ -578,6 +632,23 @@ function DesktopApp() {
     }
   };
 
+  const pollAgentEvents = async () => {
+    if (!IS_TAURI) return [];
+
+    const events = await invokeDesktop("poll_agent_events", {
+      afterSeq: eventCursor.current,
+    });
+
+    if (!Array.isArray(events) || events.length === 0) return [];
+
+    eventCursor.current = Math.max(
+      eventCursor.current,
+      ...events.map((event) => Number(event.seq) || 0),
+    );
+    setAgentEvents((previous) => [...previous, ...events].slice(-80));
+    return events;
+  };
+
   const executeDesktopTask = async (task) => {
     if (!IS_TAURI) {
       throw new Error("Local agent execution is only available in Sen Desktop.");
@@ -586,27 +657,86 @@ function DesktopApp() {
       throw new Error("Choose a workspace before asking Sen to work.");
     }
 
-    const result = await invokeDesktop("run_agent_task", {
-      path: workspacePath,
-      task,
-    });
+    const startedAt = Date.now();
+    const approvedSensitive = approvedTasks.current.has(task);
+    approvedTasks.current.delete(task);
+    cancelRequested.current = false;
+    eventCursor.current = 0;
+    setAgentEvents([]);
+    setConsoleMode("live");
+    setConsoleOpen(true);
 
-    await refreshWorkspace(workspacePath);
+    await invokeDesktop("clear_agent_events");
 
-    if (!result?.success) {
-      throw new Error(result?.message || "Codex could not finish this task.");
+    let historyRecorded = false;
+
+    try {
+      const result = await invokeDesktop("run_agent_task", {
+        path: workspacePath,
+        task,
+        approvedSensitive,
+      });
+
+      await pollAgentEvents();
+      const latestWorkspace = await refreshWorkspace(workspacePath);
+
+      const status = cancelRequested.current
+        ? "stopped"
+        : result?.success
+          ? "success"
+          : "failed";
+
+      saveTaskHistory({
+        id: `${startedAt}-${Math.random().toString(36).slice(2, 7)}`,
+        task,
+        status,
+        startedAt,
+        finishedAt: Date.now(),
+        workspacePath,
+        workspaceName: latestWorkspace?.name || workspace?.name || "Workspace",
+        changedFiles: result?.changedFiles?.length || 0,
+        summary: result?.message || "",
+      });
+      historyRecorded = true;
+
+      if (!result?.success) {
+        throw new Error(result?.message || "Codex could not finish this task.");
+      }
+
+      const changed = result.changedFiles?.length
+        ? `\n\nWorkspace now has ${result.changedFiles.length} changed file${result.changedFiles.length === 1 ? "" : "s"}.`
+        : "";
+
+      return `${result.message || "Task completed."}${changed}`;
+    } catch (error) {
+      if (!cancelRequested.current && !historyRecorded) {
+        const detail =
+          typeof error === "string"
+            ? error
+            : error?.message || "Codex could not finish this task.";
+
+        saveTaskHistory({
+          id: `${startedAt}-${Math.random().toString(36).slice(2, 7)}`,
+          task,
+          status: "failed",
+          startedAt,
+          finishedAt: Date.now(),
+          workspacePath,
+          workspaceName: workspace?.name || "Workspace",
+          changedFiles: 0,
+          summary: detail,
+        });
+      }
+      throw error;
     }
-
-    const changed = result.changedFiles?.length
-      ? `\n\nWorkspace now has ${result.changedFiles.length} changed file${result.changedFiles.length === 1 ? "" : "s"}.`
-      : "";
-
-    return `${result.message || "Task completed."}${changed}`;
   };
 
   const cancelDesktopTask = async () => {
     if (!IS_TAURI) return false;
-    return invokeDesktop("cancel_agent_task");
+    cancelRequested.current = true;
+    const stopped = await invokeDesktop("cancel_agent_task");
+    await pollAgentEvents().catch(() => {});
+    return stopped;
   };
 
   const {
@@ -632,6 +762,9 @@ function DesktopApp() {
     enabled: !isRunning,
   });
   const codexAgent = localAgents.find((agent) => agent.id === "codex");
+  const lastWorkspaceTask = taskHistory.find(
+    (item) => item.workspacePath === workspacePath,
+  );
 
   useEffect(() => {
     if (!IS_TAURI) return undefined;
@@ -665,6 +798,28 @@ function DesktopApp() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!IS_TAURI || !isRunning) return undefined;
+
+    let disposed = false;
+    const tick = () => {
+      pollAgentEvents().catch(() => {});
+    };
+
+    tick();
+    const timer = window.setInterval(() => {
+      if (!disposed) tick();
+    }, 220);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.setTimeout(() => {
+        pollAgentEvents().catch(() => {});
+      }, 120);
+    };
+  }, [isRunning]);
+
   const chooseWorkspace = async () => {
     if (!IS_TAURI || isRunning || workspaceBusy) return;
 
@@ -679,6 +834,7 @@ function DesktopApp() {
         path: selected,
       });
       setWorkspace(summary);
+      setConsoleOpen(false);
     } finally {
       setWorkspaceBusy(false);
     }
@@ -705,6 +861,44 @@ function DesktopApp() {
     } finally {
       setDesktopSettingBusy(false);
     }
+  };
+
+  const submitDesktopTask = (rawTask = command) => {
+    const task = rawTask.trim();
+    if (!task || isRunning) return;
+
+    if (IS_TAURI) {
+      const sensitive = classifySensitiveTask(task);
+      if (sensitive && !approvedTasks.current.has(task)) {
+        setPendingApproval({ task, reasons: sensitive.reasons });
+        return;
+      }
+    }
+
+    runCommand(task);
+  };
+
+  const approveSensitiveTask = () => {
+    if (!pendingApproval) return;
+    approvedTasks.current.add(pendingApproval.task);
+    const task = pendingApproval.task;
+    setPendingApproval(null);
+    runCommand(task);
+  };
+
+  const continueLastTask = () => {
+    if (!lastWorkspaceTask || isRunning) return;
+
+    setCommand(
+      `Continue the previous task from the current workspace state. Inspect git status, diff and recent changes first, then continue safely from:\n\n${lastWorkspaceTask.task}`,
+    );
+    setConsoleOpen(false);
+  };
+
+  const loadHistoryTask = (item) => {
+    if (isRunning) return;
+    setCommand(item.task);
+    setConsoleOpen(false);
   };
 
   return (
@@ -782,6 +976,18 @@ function DesktopApp() {
             )}
           </div>
 
+          <button
+            type="button"
+            className={`desktop-task-toggle ${consoleOpen ? "active" : ""}`}
+            onClick={() => setConsoleOpen((value) => !value)}
+            disabled={!IS_TAURI}
+            title="Live agent activity and task history"
+          >
+            <span>≡</span>
+            Tasks
+            {taskHistory.length > 0 ? <b>{Math.min(taskHistory.length, 9)}</b> : null}
+          </button>
+
           <div
             className={`desktop-agent-chip ${codexAgent?.available ? "ready" : "missing"}`}
             title={codexAgent?.version || "Codex CLI was not found in PATH"}
@@ -818,6 +1024,93 @@ function DesktopApp() {
               />
             </Canvas>
           </SceneBoundary>
+
+          {consoleOpen ? (
+            <div className="desktop-agent-console">
+              <div className="desktop-console-head">
+                <div className="desktop-console-tabs">
+                  <button
+                    type="button"
+                    className={consoleMode === "live" ? "active" : ""}
+                    onClick={() => setConsoleMode("live")}
+                  >
+                    Live
+                  </button>
+                  <button
+                    type="button"
+                    className={consoleMode === "history" ? "active" : ""}
+                    onClick={() => setConsoleMode("history")}
+                  >
+                    History
+                  </button>
+                </div>
+                <div className="desktop-console-actions">
+                  {lastWorkspaceTask && !isRunning ? (
+                    <button type="button" onClick={continueLastTask}>
+                      Continue last
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="close"
+                    onClick={() => setConsoleOpen(false)}
+                    aria-label="Close task console"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div className="desktop-console-body">
+                {consoleMode === "live" ? (
+                  agentEvents.length ? (
+                    agentEvents.slice(-8).map((event) => (
+                      <div
+                        className={`desktop-agent-event event-${event.kind}`}
+                        key={event.seq}
+                      >
+                        <span />
+                        <div>
+                          <strong>{event.label}</strong>
+                          <p>{event.detail}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="desktop-console-empty">
+                      {isRunning
+                        ? "Waiting for Codex activity…"
+                        : "Run a task to see commands, reasoning and file changes here."}
+                    </div>
+                  )
+                ) : taskHistory.length ? (
+                  taskHistory.slice(0, 8).map((item) => (
+                    <button
+                      type="button"
+                      className="desktop-history-item"
+                      key={item.id}
+                      onClick={() => loadHistoryTask(item)}
+                      title="Load this task back into the command box"
+                    >
+                      <span className={`history-status ${item.status}`} />
+                      <div>
+                        <strong>{item.task}</strong>
+                        <small>
+                          {item.workspaceName} · {item.status}
+                          {item.changedFiles ? ` · ${item.changedFiles} changed` : ""}
+                        </small>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="desktop-console-empty">
+                    No local task history yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <div className="desktop-moment">
             <span>{current[3]}</span>
             <div>
@@ -834,7 +1127,7 @@ function DesktopApp() {
           className="desktop-command"
           onSubmit={(event) => {
             event.preventDefault();
-            runCommand();
+            submitDesktopTask();
           }}
         >
           <button
@@ -903,6 +1196,41 @@ function DesktopApp() {
           </button>
           <kbd>Ctrl ⇧ Space</kbd>
         </footer>
+
+        {pendingApproval ? (
+          <div className="desktop-approval-backdrop">
+            <section
+              className="desktop-approval"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Sensitive task approval"
+            >
+              <small>APPROVAL REQUIRED</small>
+              <h3>Sen needs permission for this task.</h3>
+              <p>{pendingApproval.task}</p>
+              <ul>
+                {pendingApproval.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setPendingApproval(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="approve"
+                  onClick={approveSensitiveTask}
+                >
+                  Approve & run
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </section>
     </main>
   );

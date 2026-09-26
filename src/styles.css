@@ -4352,6 +4352,7 @@ em {
 }
 
 .desktop-card {
+  position: relative;
   width: 100%;
   min-height: calc(100vh - 20px);
   display: grid;
@@ -4831,5 +4832,377 @@ em {
   .desktop-agent-chip::after {
     content: "Agent";
     font-size: 6px;
+  }
+}
+
+
+/* Sen Desktop v0.4 · live task console ------------------------------------ */
+.desktop-workspace {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.desktop-task-toggle {
+  position: relative;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid var(--desktop-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--desktop-card) 78%, transparent);
+  color: var(--desktop-muted);
+  font-size: 6px;
+  white-space: nowrap;
+}
+
+.desktop-task-toggle > span {
+  color: var(--state-accent, #c97f98);
+  font-size: 9px;
+}
+
+.desktop-task-toggle b {
+  min-width: 13px;
+  height: 13px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--state-soft) 78%, transparent);
+  color: var(--state-accent, #c97f98);
+  font-size: 5px;
+  font-weight: 600;
+}
+
+.desktop-task-toggle.active {
+  border-color: color-mix(in srgb, var(--state-accent) 40%, var(--desktop-border));
+  color: var(--state-accent, #c97f98);
+}
+
+.desktop-agent-console {
+  position: absolute;
+  z-index: 4;
+  left: 16px;
+  right: 16px;
+  bottom: 74px;
+  height: 150px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--state-accent) 18%, var(--desktop-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--desktop-card) 94%, transparent);
+  box-shadow: 0 18px 50px var(--desktop-shadow);
+  backdrop-filter: blur(20px);
+}
+
+.desktop-console-head {
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 7px 5px 9px;
+  border-bottom: 1px solid color-mix(in srgb, var(--desktop-border) 70%, transparent);
+}
+
+.desktop-console-tabs,
+.desktop-console-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.desktop-console-tabs button,
+.desktop-console-actions button {
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--desktop-muted);
+  font-size: 6px;
+  letter-spacing: 0.3px;
+}
+
+.desktop-console-tabs button.active {
+  background: color-mix(in srgb, var(--state-soft) 70%, transparent);
+  color: var(--state-accent, #c97f98);
+}
+
+.desktop-console-actions button:not(.close) {
+  background: color-mix(in srgb, var(--state-soft) 58%, transparent);
+  color: var(--state-accent, #c97f98);
+}
+
+.desktop-console-actions .close {
+  width: 24px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.desktop-console-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 9px 9px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--state-accent) 24%, transparent) transparent;
+}
+
+.desktop-agent-event {
+  display: grid;
+  grid-template-columns: 7px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--desktop-border) 42%, transparent);
+}
+
+.desktop-agent-event:last-child {
+  border-bottom: 0;
+}
+
+.desktop-agent-event > span {
+  width: 6px;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #a99a91;
+}
+
+.desktop-agent-event > div {
+  min-width: 0;
+}
+
+.desktop-agent-event strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--desktop-ink);
+  font-size: 6px;
+  letter-spacing: 0.3px;
+}
+
+.desktop-agent-event p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--desktop-muted);
+  font: 7px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-agent-event.event-thinking > span {
+  background: #a58acb;
+  box-shadow: 0 0 8px #a58acb66;
+}
+
+.desktop-agent-event.event-command > span {
+  background: #c7a25f;
+  box-shadow: 0 0 8px #c7a25f5c;
+}
+
+.desktop-agent-event.event-file > span {
+  background: #7fa487;
+  box-shadow: 0 0 8px #7fa4875c;
+}
+
+.desktop-agent-event.event-message > span,
+.desktop-agent-event.event-done > span {
+  background: var(--state-accent, #c97f98);
+  box-shadow: 0 0 9px var(--state-glow, #d99aad44);
+}
+
+.desktop-agent-event.event-error > span,
+.desktop-agent-event.event-stderr > span {
+  background: #bd776f;
+}
+
+.desktop-agent-event.event-warning > span {
+  background: #c99a5f;
+}
+
+.desktop-console-empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  color: var(--desktop-muted);
+  font: italic 8px/1.55 Georgia, serif;
+  text-align: center;
+}
+
+.desktop-history-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 7px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--desktop-border) 42%, transparent);
+  background: transparent;
+  color: var(--desktop-ink);
+  text-align: left;
+}
+
+.desktop-history-item:last-child {
+  border-bottom: 0;
+}
+
+.history-status {
+  width: 6px;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #a99a91;
+}
+
+.history-status.success {
+  background: #7da187;
+}
+
+.history-status.failed {
+  background: #bd776f;
+}
+
+.history-status.stopped {
+  background: #c99a5f;
+}
+
+.desktop-history-item > div {
+  min-width: 0;
+}
+
+.desktop-history-item strong {
+  display: block;
+  overflow: hidden;
+  color: var(--desktop-ink);
+  font-size: 7px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-history-item small {
+  display: block;
+  margin-top: 2px;
+  color: var(--desktop-muted);
+  font-size: 5px;
+  letter-spacing: 0.25px;
+}
+
+.desktop-approval-backdrop {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #211a223f;
+  backdrop-filter: blur(10px);
+}
+
+.desktop-approval {
+  width: min(360px, 100%);
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, #c69a74 42%, var(--desktop-border));
+  border-radius: 20px;
+  background: var(--desktop-card);
+  box-shadow: 0 26px 80px #21151e35;
+}
+
+.desktop-approval > small {
+  color: #af7d5c;
+  font-size: 6px;
+  letter-spacing: 1.3px;
+}
+
+.desktop-approval h3 {
+  margin: 7px 0 8px;
+  color: var(--desktop-ink);
+  font: normal 17px/1.2 Georgia, serif;
+}
+
+.desktop-approval > p {
+  max-height: 86px;
+  margin: 0;
+  overflow: auto;
+  color: var(--desktop-muted);
+  font: 8px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.desktop-approval ul {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0 14px;
+  padding: 10px 10px 10px 24px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #c69a74 9%, var(--desktop-card));
+  color: var(--desktop-muted);
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.desktop-approval > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.desktop-approval > div button {
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--desktop-border);
+  border-radius: 10px;
+  background: var(--desktop-input);
+  color: var(--desktop-muted);
+  font-size: 7px;
+}
+
+.desktop-approval > div .approve {
+  border-color: color-mix(in srgb, #bd8962 55%, var(--desktop-border));
+  background: #a96f52;
+  color: #fff8f3;
+}
+
+.time-night .desktop-agent-console,
+.time-night .desktop-approval {
+  background: #201927f2;
+}
+
+.time-night .desktop-approval-backdrop {
+  background: #09060d72;
+}
+
+.time-night .desktop-task-toggle.active,
+.time-night .desktop-console-tabs button.active,
+.time-night .desktop-console-actions button:not(.close) {
+  background: color-mix(in srgb, var(--state-accent) 18%, #251d2d);
+  color: color-mix(in srgb, var(--state-accent) 58%, #fff);
+}
+
+@media (max-width: 455px) {
+  .desktop-workspace {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .desktop-task-toggle {
+    width: 26px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .desktop-task-toggle > span {
+    font-size: 10px;
+  }
+
+  .desktop-task-toggle b {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+  }
+
+  .desktop-agent-console {
+    left: 10px;
+    right: 10px;
   }
 }
