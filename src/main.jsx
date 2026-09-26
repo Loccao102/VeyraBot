@@ -33,10 +33,18 @@ const STATE_LIGHTS = {
   sleep: { color: "#9ab4e8", back: "#b99bd3", intensity: 0.38 },
 };
 
+const IS_TAURI =
+  typeof window !== "undefined" && Boolean(window.__TAURI_INTERNALS__?.invoke);
+
 const IS_DESKTOP_SHELL =
   typeof window !== "undefined" &&
-  (Boolean(window.__TAURI_INTERNALS__) ||
+  (IS_TAURI ||
     new URLSearchParams(window.location.search).get("desktop") === "1");
+
+async function invokeDesktop(command, args = {}) {
+  if (!IS_TAURI) return null;
+  return window.__TAURI_INTERNALS__.invoke(command, args);
+}
 
 const QUICK_COMMANDS = [
   "Continue my project",
@@ -544,6 +552,9 @@ function Scene({
 function DesktopApp() {
   const reducedMotion = useReducedMotion();
   const presence = usePresence();
+  const [alwaysOnTop, setAlwaysOnTopState] = useState(false);
+  const [autoStart, setAutoStartState] = useState(false);
+  const [desktopSettingBusy, setDesktopSettingBusy] = useState(false);
   const {
     state,
     setState,
@@ -564,6 +575,49 @@ function DesktopApp() {
     enabled: !isRunning,
   });
 
+  useEffect(() => {
+    if (!IS_TAURI) return undefined;
+    let cancelled = false;
+
+    Promise.all([
+      invokeDesktop("get_always_on_top"),
+      invokeDesktop("get_autostart_enabled"),
+    ])
+      .then(([top, startup]) => {
+        if (cancelled) return;
+        setAlwaysOnTopState(Boolean(top));
+        setAutoStartState(Boolean(startup));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateDesktopSetting = async (kind) => {
+    if (!IS_TAURI || desktopSettingBusy) return;
+    setDesktopSettingBusy(true);
+
+    try {
+      if (kind === "top") {
+        const next = !alwaysOnTop;
+        const result = await invokeDesktop("set_always_on_top", {
+          enabled: next,
+        });
+        setAlwaysOnTopState(Boolean(result));
+      } else {
+        const next = !autoStart;
+        const result = await invokeDesktop("set_autostart", {
+          enabled: next,
+        });
+        setAutoStartState(Boolean(result));
+      }
+    } finally {
+      setDesktopSettingBusy(false);
+    }
+  };
+
   return (
     <main
       className={`sen-desktop state-${state} time-${presence.phase.key} weather-${presence.weather.key}`}
@@ -577,9 +631,34 @@ function DesktopApp() {
               <small>LOTUS COMPANION</small>
             </div>
           </div>
-          <div className="desktop-presence" data-tauri-drag-region>
-            <span className={`desktop-state-dot ${state}`} />
-            <span>{current[1]}</span>
+
+          <div className="desktop-header-actions">
+            <button
+              type="button"
+              className={alwaysOnTop ? "active" : ""}
+              onClick={() => updateDesktopSetting("top")}
+              disabled={!IS_TAURI || desktopSettingBusy}
+              title={IS_TAURI ? "Keep Sen above other windows" : "Available in the desktop app"}
+              aria-pressed={alwaysOnTop}
+            >
+              <span>⌃</span>
+              Pin
+            </button>
+            <button
+              type="button"
+              className={autoStart ? "active" : ""}
+              onClick={() => updateDesktopSetting("startup")}
+              disabled={!IS_TAURI || desktopSettingBusy}
+              title={IS_TAURI ? "Start Sen when Windows signs in" : "Available in the desktop app"}
+              aria-pressed={autoStart}
+            >
+              <span>◌</span>
+              Startup
+            </button>
+            <div className="desktop-presence" data-tauri-drag-region>
+              <span className={`desktop-state-dot ${state}`} />
+              <span>{current[1]}</span>
+            </div>
           </div>
         </header>
 
