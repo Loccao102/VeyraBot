@@ -1,14 +1,14 @@
 # Sen Desktop
 
-Sen Desktop reuses the finished 3D Sen mascot as a lightweight desktop companion.
+Sen Desktop reuses the finished 3D Sen mascot as a lightweight desktop coding companion.
 
-## Current v0.2
+## Current v0.3
+
+### Desktop shell
 
 - Tauri 2 desktop host
 - compact 480×700 companion window
 - the same animated Sen model and six moods as the web playground
-- compact command input and voice entry
-- local time / weather visual presence
 - system tray with **Show / Hide Sen** and **Quit Sen**
 - global shortcut: **Ctrl + Shift + Space**
 - closing the window hides Sen to the tray instead of ending the process
@@ -17,6 +17,40 @@ Sen Desktop reuses the finished 3D Sen mascot as a lightweight desktop companion
 - autostart launches Sen quietly in the tray with `--minimized`
 - Windows NSIS installer packaging
 - the web playground remains unchanged
+
+### Local agent bridge
+
+Sen can now work against a real local workspace instead of only simulating agent states.
+
+1. Click **Workspace** and choose the local project folder Sen is allowed to work in.
+2. Sen reads the actual Git state: branch, changed files, recent commits and remote.
+3. Sen detects whether **Codex CLI** is available.
+4. When a task is submitted in the desktop app, Sen maps its visible lifecycle to the real executor:
+   - Listening
+   - Thinking
+   - Working
+   - Success / Idle
+5. The desktop host runs:
+   ```text
+   codex exec --json --full-auto "<task>"
+   ```
+   with the selected workspace as the process working directory.
+6. **Stop** terminates the active Codex process tree on Windows.
+7. The workspace is re-inspected after the task so Sen can show the resulting Git changes.
+
+The app does not embed an OpenAI API key. It uses the user's existing local Codex CLI installation and authentication.
+
+## Prerequisites for local coding tasks
+
+Install and authenticate Codex CLI separately, then ensure `codex` is available in `PATH`.
+
+You can verify it with:
+
+```bash
+codex --version
+```
+
+If Codex is not installed, Sen still opens normally and shows **Codex missing** in the workspace bar.
 
 ## Run in development
 
@@ -39,7 +73,7 @@ The desktop UI can also be previewed without Tauri:
 http://localhost:5173/?desktop=1
 ```
 
-Desktop-only controls such as **Pin** and **Startup** are disabled in browser preview because they require the Tauri host.
+Native workspace, Pin, Startup and agent execution controls require the Tauri desktop host.
 
 ## Build locally
 
@@ -72,12 +106,14 @@ Sen Desktop
 │  ├─ global shortcut
 │  ├─ always-on-top
 │  ├─ Windows autostart
+│  ├─ workspace picker
+│  ├─ Git workspace inspector
 │  └─ NSIS packaging
-└─ Agent layer (next)
-   ├─ intent
-   ├─ planner
-   ├─ dispatcher
-   └─ tool / coding-agent adapters
+└─ Local agent bridge
+   ├─ executor detection
+   ├─ Codex CLI
+   ├─ process lifecycle / Stop
+   └─ post-task Git refresh
 ```
 
-The mascot is treated as frozen **Character v1**. Future work should focus on desktop behavior and agent capability rather than adding more visual effects.
+The mascot is treated as frozen **Character v1**. Future desktop work should focus on agent memory, task history, permissions and orchestration rather than adding more visual effects.
