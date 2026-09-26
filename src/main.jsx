@@ -555,6 +555,60 @@ function DesktopApp() {
   const [alwaysOnTop, setAlwaysOnTopState] = useState(false);
   const [autoStart, setAutoStartState] = useState(false);
   const [desktopSettingBusy, setDesktopSettingBusy] = useState(false);
+  const [workspacePath, setWorkspacePath] = useState(
+    () => localStorage.getItem("sen.desktop.workspace.v1") || "",
+  );
+  const [workspace, setWorkspace] = useState(null);
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
+  const [localAgents, setLocalAgents] = useState([]);
+
+  const refreshWorkspace = async (path = workspacePath) => {
+    if (!IS_TAURI || !path) {
+      setWorkspace(null);
+      return null;
+    }
+
+    setWorkspaceBusy(true);
+    try {
+      const summary = await invokeDesktop("inspect_workspace", { path });
+      setWorkspace(summary);
+      return summary;
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  };
+
+  const executeDesktopTask = async (task) => {
+    if (!IS_TAURI) {
+      throw new Error("Local agent execution is only available in Sen Desktop.");
+    }
+    if (!workspacePath) {
+      throw new Error("Choose a workspace before asking Sen to work.");
+    }
+
+    const result = await invokeDesktop("run_agent_task", {
+      path: workspacePath,
+      task,
+    });
+
+    await refreshWorkspace(workspacePath);
+
+    if (!result?.success) {
+      throw new Error(result?.message || "Codex could not finish this task.");
+    }
+
+    const changed = result.changedFiles?.length
+      ? `\n\nWorkspace now has ${result.changedFiles.length} changed file${result.changedFiles.length === 1 ? "" : "s"}.`
+      : "";
+
+    return `${result.message || "Task completed."}${changed}`;
+  };
+
+  const cancelDesktopTask = async () => {
+    if (!IS_TAURI) return false;
+    return invokeDesktop("cancel_agent_task");
+  };
+
   const {
     state,
     setState,
@@ -565,7 +619,10 @@ function DesktopApp() {
     runCommand,
     cancel,
     startVoiceInput,
-  } = useVeyraAgent();
+  } = useVeyraAgent({
+    executeCommand: IS_TAURI ? executeDesktopTask : null,
+    cancelExecution: IS_TAURI ? cancelDesktopTask : null,
+  });
 
   const current = STATES.find((item) => item[0] === state) ?? STATES[0];
   const desktopInteraction = useInteractionManager({
@@ -574,6 +631,7 @@ function DesktopApp() {
     state,
     enabled: !isRunning,
   });
+  const codexAgent = localAgents.find((agent) => agent.id === "codex");
 
   useEffect(() => {
     if (!IS_TAURI) return undefined;
@@ -582,18 +640,49 @@ function DesktopApp() {
     Promise.all([
       invokeDesktop("get_always_on_top"),
       invokeDesktop("get_autostart_enabled"),
+      invokeDesktop("detect_local_agents"),
     ])
-      .then(([top, startup]) => {
+      .then(([top, startup, agents]) => {
         if (cancelled) return;
         setAlwaysOnTopState(Boolean(top));
         setAutoStartState(Boolean(startup));
+        setLocalAgents(Array.isArray(agents) ? agents : []);
       })
       .catch(() => {});
+
+    if (workspacePath) {
+      refreshWorkspace(workspacePath).catch(() => {
+        if (!cancelled) {
+          localStorage.removeItem("sen.desktop.workspace.v1");
+          setWorkspacePath("");
+          setWorkspace(null);
+        }
+      });
+    }
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const chooseWorkspace = async () => {
+    if (!IS_TAURI || isRunning || workspaceBusy) return;
+
+    setWorkspaceBusy(true);
+    try {
+      const selected = await invokeDesktop("pick_workspace");
+      if (!selected) return;
+
+      localStorage.setItem("sen.desktop.workspace.v1", selected);
+      setWorkspacePath(selected);
+      const summary = await invokeDesktop("inspect_workspace", {
+        path: selected,
+      });
+      setWorkspace(summary);
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  };
 
   const updateDesktopSetting = async (kind) => {
     if (!IS_TAURI || desktopSettingBusy) return;
@@ -662,6 +751,46 @@ function DesktopApp() {
           </div>
         </header>
 
+        <div className="desktop-workspace">
+          <button
+            type="button"
+            className="desktop-workspace-picker"
+            onClick={chooseWorkspace}
+            disabled={!IS_TAURI || isRunning || workspaceBusy}
+            title={workspacePath || "Choose the local folder Sen is allowed to work in"}
+          >
+            <span>{workspaceBusy ? "…" : "⌂"}</span>
+            <div>
+              <small>WORKSPACE</small>
+              <strong>{workspace?.name || (IS_TAURI ? "Choose a folder" : "Desktop preview")}</strong>
+            </div>
+          </button>
+
+          <div className="desktop-workspace-meta">
+            {workspace?.isGit ? (
+              <>
+                <span>{workspace.branch || "detached"}</span>
+                <i>·</i>
+                <span className={workspace.dirtyCount ? "dirty" : "clean"}>
+                  {workspace.dirtyCount ? `${workspace.dirtyCount} changed` : "clean"}
+                </span>
+              </>
+            ) : workspace ? (
+              <span>local folder</span>
+            ) : (
+              <span>no workspace selected</span>
+            )}
+          </div>
+
+          <div
+            className={`desktop-agent-chip ${codexAgent?.available ? "ready" : "missing"}`}
+            title={codexAgent?.version || "Codex CLI was not found in PATH"}
+          >
+            <span />
+            {codexAgent?.available ? "Codex ready" : "Codex missing"}
+          </div>
+        </div>
+
         <section className="desktop-stage" aria-label="Sen desktop companion">
           <div className="desktop-stage-glow" />
           <SceneBoundary>
@@ -692,7 +821,10 @@ function DesktopApp() {
           <div className="desktop-moment">
             <span>{current[3]}</span>
             <div>
-              <small>{current[1].toUpperCase()}</small>
+              <small>
+                {isRunning && IS_TAURI ? "LOCAL AGENT · " : ""}
+                {current[1].toUpperCase()}
+              </small>
               <p>{message}</p>
             </div>
           </div>
@@ -727,10 +859,14 @@ function DesktopApp() {
           <input
             aria-label="Ask Sen"
             value={command}
-            disabled={isRunning}
+            disabled={isRunning || (IS_TAURI && !workspacePath)}
             onChange={(event) => setCommand(event.target.value)}
             placeholder={
-              isRunning ? "Sen is working…" : "Ask Sen to do something…"
+              isRunning
+                ? "Sen is working in the workspace…"
+                : IS_TAURI && !workspacePath
+                  ? "Choose a workspace first…"
+                  : "Ask Sen to continue, fix, inspect…"
             }
           />
           {isRunning ? (
@@ -745,7 +881,7 @@ function DesktopApp() {
             <button
               type="submit"
               className="desktop-send"
-              disabled={!command.trim()}
+              disabled={!command.trim() || (IS_TAURI && !workspacePath)}
             >
               ↗
             </button>
