@@ -1,6 +1,6 @@
 [package]
 name = "sen-desktop"
-version = "0.2.0"
+version = "0.3.0"
 description = "Sen lotus desktop companion"
 authors = ["Loccao102"]
 edition = "2021"
