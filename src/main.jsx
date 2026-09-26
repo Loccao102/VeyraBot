@@ -668,6 +668,8 @@ function DesktopApp() {
 
     await invokeDesktop("clear_agent_events");
 
+    let historyRecorded = false;
+
     try {
       const result = await invokeDesktop("run_agent_task", {
         path: workspacePath,
@@ -695,6 +697,7 @@ function DesktopApp() {
         changedFiles: result?.changedFiles?.length || 0,
         summary: result?.message || "",
       });
+      historyRecorded = true;
 
       if (!result?.success) {
         throw new Error(result?.message || "Codex could not finish this task.");
@@ -706,7 +709,7 @@ function DesktopApp() {
 
       return `${result.message || "Task completed."}${changed}`;
     } catch (error) {
-      if (!cancelRequested.current) {
+      if (!cancelRequested.current && !historyRecorded) {
         const detail =
           typeof error === "string"
             ? error
