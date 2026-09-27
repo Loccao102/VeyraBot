@@ -467,6 +467,7 @@ function CrownPetal({ side, index, state, motion, bloom, palette }) {
 }
 
 function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
+  const joyful = state === "success" || state === "dance";
   const gazeRefs = useRef({});
   const eyeShapeRefs = useRef({});
   const lidRefs = useRef({});
@@ -493,7 +494,7 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     if (state === "sleep") {
       targetBlink = 1;
       blinkMode.current = "closed";
-    } else if (state === "success") {
+    } else if (joyful) {
       targetBlink = 0;
     } else {
       // Blink is a facial life cue, not a large motion effect. Keep it active
@@ -564,7 +565,7 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
     });
 
     const stateGaze =
-      state === "sleep" || state === "success"
+      state === "sleep" || joyful
         ? 0
         : state === "thinking"
           ? 0.72
@@ -602,7 +603,7 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
           position={[side * 0.205, 0, 0]}
           rotation={[0, 0, state === "thinking" ? side * 0.12 : -side * 0.06]}
         >
-          {state === "success" ? (
+          {joyful ? (
             <Line
               points={Array.from({ length: 25 }, (_, i) => {
                 const t = (i / 24) * Math.PI;
@@ -678,11 +679,13 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
             points={[
               [
                 -0.075,
-                0.21 + (state === "thinking" && side < 0 ? 0.035 : 0),
+                0.21 +
+                  (state === "thinking" && side < 0 ? 0.035 : 0) +
+                  (state === "dance" ? 0.028 : 0),
                 -0.035,
               ],
-              [0, 0.23, -0.025],
-              [0.075, 0.21, -0.035],
+              [0, 0.23 + (state === "dance" ? 0.034 : 0), -0.025],
+              [0.075, 0.21 + (state === "dance" ? 0.028 : 0), -0.035],
             ]}
             color="#bb8890"
             lineWidth={2}
@@ -697,7 +700,11 @@ function Eyes({ state, motion, bloom, gazePointer, focusActive = false }) {
           scale={[0.08, 0.033, 0.018]}
         >
           <sphereGeometry args={[1, 16, 8]} />
-          <meshBasicMaterial color="#e5a2b2" transparent opacity={0.6} />
+          <meshBasicMaterial
+            color={state === "dance" ? "#dd819b" : "#e5a2b2"}
+            transparent
+            opacity={state === "dance" ? 0.82 : 0.6}
+          />
         </mesh>
       ))}
     </group>
@@ -2494,15 +2501,17 @@ export default function SenModel({
     const turnPose = motionWindow(danceT, 0.34, 0.42, 0.68, 0.76);
     const finishPose = motionWindow(danceT, 0.72, 0.82, 0.97, 1);
 
-    const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.39, 0.72);
-    const pirouetteAngle = turnProgress * TAU * danceMotion;
+    const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.36, 0.8);
+    // Keep the spin complete and readable. Reduced-motion only affects secondary
+    // sway/flare, not whether Sen actually finishes the authored turn.
+    const pirouetteAngle = turnProgress * TAU * 1.02;
     const danceYawTarget = pirouetteAngle;
 
     // Head spotting is deliberately subtle; body orientation now carries the turn.
     const headSpot =
-      -pirouetteAngle * 0.34 +
+      -pirouetteAngle * 0.22 +
       Math.sin(turnProgress * Math.PI * 2) *
-        0.035 *
+        0.026 *
         turnPose *
         danceMotion;
 
@@ -2883,7 +2892,7 @@ export default function SenModel({
     });
     if (skirt.current) {
       const flare =
-        (openPose * 0.16 + turnPose * 0.46 + finishPose * 0.07) *
+        (openPose * 0.13 + turnPose * 0.34 + finishPose * 0.055) *
         balletDance *
         danceMotion;
       const skirtSweep = turnPose * 0.028 * balletDance * danceMotion;
@@ -3185,21 +3194,21 @@ export default function SenModel({
               ornament
             />
             <Petal
-              position={[side * 0.24, -0.58, 0.07]}
-              rotation={[0.2, side * 0.22, -side * 1.1]}
-              scale={[0.52, 0.78, 0.54]}
-              color="#88a96a"
-              accent="#c8a05d"
-              bend={0.16}
+              position={[side * 0.34, -0.7, -0.16]}
+              rotation={[0.13, side * 0.34, -side * 0.96]}
+              scale={[0.44, 0.68, 0.44]}
+              color="#86a669"
+              accent="#c39a58"
+              bend={0.13}
               leaf
             />
             <Petal
-              position={[side * 0.62, -0.34, 0.035]}
-              rotation={[0.16, side * 0.28, -side * 2.05]}
-              scale={[0.46, 0.74, 0.5]}
-              color="#78985f"
-              accent="#c8a05d"
-              bend={0.14}
+              position={[side * 0.76, -0.5, -0.2]}
+              rotation={[0.11, side * 0.38, -side * 1.78]}
+              scale={[0.39, 0.62, 0.42]}
+              color="#75945d"
+              accent="#c39a58"
+              bend={0.11}
               leaf
             />
             <group
@@ -3216,18 +3225,18 @@ export default function SenModel({
                 ornament
               />
               <Petal
-                position={[side * 0.5, -0.18, -0.035]}
-                rotation={[0.15, side * 0.25, -side * 2.4]}
-                scale={[0.58, 0.86, 0.6]}
+                position={[side * 0.52, -0.24, -0.16]}
+                rotation={[0.13, side * 0.3, -side * 2.28]}
+                scale={[0.48, 0.74, 0.5]}
                 color={personalPalette.leaf}
                 accent={personalPalette.gold}
                 leaf
               />
             </group>
             <Petal
-              position={[0, 0.14, 0.07]}
-              rotation={[0.25, 0, -side * 1.16]}
-              scale={[0.36, 0.62, 0.5]}
+              position={[side * 0.12, -0.02, -0.18]}
+              rotation={[0.2, side * 0.16, -side * 1.08]}
+              scale={[0.3, 0.54, 0.42]}
               color={personalPalette.leaf}
               accent={personalPalette.gold}
               leaf
