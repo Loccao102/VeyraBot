@@ -385,10 +385,11 @@ function Petal({
           color={color}
           vertexColors={!leaf}
           side={THREE.DoubleSide}
-          metalness={leaf ? 0.2 : 0.12}
-          roughness={0.3}
-          clearcoat={0.75}
-          clearcoatRoughness={0.23}
+          metalness={leaf ? 0.02 : 0.12}
+          roughness={leaf ? 0.72 : 0.3}
+          clearcoat={leaf ? 0.08 : 0.75}
+          clearcoatRoughness={leaf ? 0.65 : 0.23}
+          reflectivity={leaf ? 0.2 : 0.5}
           iridescence={leaf ? 0 : 0.24}
           iridescenceIOR={1.3}
         />
@@ -2523,6 +2524,11 @@ export default function SenModel({
 
     const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.34, 0.76);
     const frontSettle = THREE.MathUtils.smootherstep(danceT, 0.8, 0.965);
+    const headCenterLock = THREE.MathUtils.clamp(
+      Math.max(patCenter, balletActive ? frontSettle : 0),
+      0,
+      1,
+    );
 
     // Pass one complete rotation before the ending phrase, then always settle
     // to exactly TAU (= the original front-facing orientation).
@@ -2757,10 +2763,13 @@ export default function SenModel({
     );
     awake.current.rotation.y = damp(
       awake.current.rotation.y,
-      idleLook * 0.18 +
+      (
+        idleLook * 0.18 +
         gazeX * 0.038 * emergence +
-        ambientHeadYaw * 0.16,
-      2.4,
+        ambientHeadYaw * 0.16
+      ) *
+        (1 - headCenterLock),
+      headCenterLock > 0.01 ? 9 : 2.4,
       delta,
     );
     awake.current.rotation.z = damp(
@@ -2788,13 +2797,15 @@ export default function SenModel({
     );
     head.current.rotation.z = damp(
       head.current.rotation.z,
-      cfg.tilt +
+      (
+        cfg.tilt +
         ambientSway * 0.68 +
         Math.sin(t * 0.65) * 0.006 * motion +
         idleTilt * 0.55 +
-        Math.sin(reactionAge * Math.PI * 2) * headPat * 0.028 +
         quietGaze * 0.045 -
-        finishPose * 0.03 * balletDance * danceMotion,
+        finishPose * 0.03 * balletDance * danceMotion
+      ) *
+        (1 - headCenterLock),
       headHover ? 4.5 : balletActive ? 8 : state === "sleep" ? 1.8 : 2.8,
       delta,
     );
@@ -2809,9 +2820,19 @@ export default function SenModel({
         ambientHeadYaw +
         gestureYaw
       ) *
-        (1 - patCenter) +
-        headSpot,
-      headHover ? 6.2 : balletActive ? 8 : state === "sleep" ? 1.7 : state === "working" ? 4.8 : 3.6,
+        (1 - headCenterLock) +
+        headSpot * (1 - headCenterLock),
+      headCenterLock > 0.01
+        ? 12
+        : headHover
+          ? 6.2
+          : balletActive
+            ? 8
+            : state === "sleep"
+              ? 1.7
+              : state === "working"
+                ? 4.8
+                : 3.6,
       delta,
     );
     head.current.rotation.x = damp(
@@ -3386,21 +3407,36 @@ export default function SenModel({
           )),
         )}
       </group>
-      {Array.from({ length: 7 }, (_, i) => (
-        <group
-          key={i}
-          position={[0, -1.03, 0]}
-          rotation={[0, (i / 7) * TAU, 0]}
-        >
-          <Petal
-            rotation={[1.32, 0, 0]}
-            scale={[0.64, 0.91, 0.4]}
-            color={personalPalette.leaf}
-            accent={personalPalette.gold}
-            leaf
-          />
-        </group>
-      ))}
+      {Array.from({ length: 7 }, (_, i) => {
+        const outerLeaf = i % 2 === 0 ? "#6f8f58" : "#82a067";
+        const innerLeaf = i % 2 === 0 ? "#4f6b43" : "#607d4d";
+
+        return (
+          <group
+            key={i}
+            position={[0, -1.025, 0]}
+            rotation={[0, (i / 7) * TAU, 0]}
+          >
+            <Petal
+              position={[0, 0, -0.015]}
+              rotation={[1.32, 0, 0]}
+              scale={[0.68, 0.95, 0.42]}
+              color={outerLeaf}
+              accent="#c29b59"
+              leaf
+            />
+            <Petal
+              position={[0, -0.012, -0.052]}
+              rotation={[1.29, 0, 0]}
+              scale={[0.53, 0.76, 0.32]}
+              color={innerLeaf}
+              accent="#aeb880"
+              bend={0.18}
+              leaf
+            />
+          </group>
+        );
+      })}
       <BloomAura bloom={bloom} motion={motion} state={state} />
       <Ripples state={state} motion={motion} bloom={bloom} />
       <TouchRipples
