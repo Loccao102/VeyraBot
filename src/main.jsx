@@ -21,6 +21,7 @@ const STATES = [
   ["thinking", "Thinking", "A little space for a thoughtful answer.", "?"],
   ["listening", "Listening", "You have my attention.", "≋"],
   ["working", "Working", "One gentle step at a time.", "↻"],
+  ["dance", "Dance", "A little lotus ballet.", "✿"],
   ["success", "Success", "Small steps. Beautiful progress.", "✦"],
   ["sleep", "Rest", "Folded into stillness. Ready when you are.", "Zz"],
 ];
@@ -29,6 +30,7 @@ const STATE_LIGHTS = {
   thinking: { color: "#c6afff", back: "#e1bd7f", intensity: 0.72 },
   listening: { color: "#8fd8d0", back: "#c5e5dc", intensity: 0.66 },
   working: { color: "#a8c98d", back: "#e0b978", intensity: 0.72 },
+  dance: { color: "#f3a9c3", back: "#efd58c", intensity: 0.92 },
   success: { color: "#ffd07b", back: "#f2a9c0", intensity: 0.98 },
   sleep: { color: "#9ab4e8", back: "#b99bd3", intensity: 0.38 },
 };
