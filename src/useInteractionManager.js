@@ -256,8 +256,8 @@ export default function useInteractionManager({
     return trigger("ballet_dance", {
       target: "sen",
       intensity: 1,
-      duration: 2800,
-      cooldown: 500,
+      duration: 4200,
+      cooldown: 300,
       force: true,
     });
   }, [enabled, markActivity, state, trigger]);
