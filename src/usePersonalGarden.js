@@ -91,21 +91,21 @@ function createDNA(seed) {
   const nature = natureOptions[Math.floor(random() * natureOptions.length)];
 
   const petalHue = 338 + random() * 14;
-  const petalLight = 69 + random() * 5;
+  const petalLight = 66 + random() * 4;
   const leafHue = 105 + random() * 22;
-  const leafLight = 39 + random() * 7;
+  const leafLight = 35 + random() * 6;
   const coreHue = 340 + random() * 16;
   const goldHue = 31 + random() * 13;
 
   return {
     signature: seed.slice(0, 8).toUpperCase(),
     nature,
-    petalPrimary: `hsl(${petalHue.toFixed(1)} 64% ${petalLight.toFixed(1)}%)`,
-    petalSoft: `hsl(${(petalHue + 4).toFixed(1)} 72% 88%)`,
-    leaf: `hsl(${leafHue.toFixed(1)} 24% ${leafLight.toFixed(1)}%)`,
-    core: `hsl(${coreHue.toFixed(1)} 68% 72%)`,
-    coreGlow: `hsl(${(coreHue - 2).toFixed(1)} 72% 66%)`,
-    gold: `hsl(${goldHue.toFixed(1)} 42% 57%)`,
+    petalPrimary: `hsl(${petalHue.toFixed(1)} 68% ${petalLight.toFixed(1)}%)`,
+    petalSoft: `hsl(${(petalHue + 4).toFixed(1)} 68% 85%)`,
+    leaf: `hsl(${leafHue.toFixed(1)} 31% ${leafLight.toFixed(1)}%)`,
+    core: `hsl(${coreHue.toFixed(1)} 70% 69%)`,
+    coreGlow: `hsl(${(coreHue - 2).toFixed(1)} 74% 62%)`,
+    gold: `hsl(${goldHue.toFixed(1)} 46% 53%)`,
     warmth: 0.45 + random() * 0.45,
     drift: 0.75 + random() * 0.45,
   };
