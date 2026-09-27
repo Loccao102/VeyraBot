@@ -3,10 +3,10 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
 import * as THREE from "three";
 
-const PINK = "#eda1b6",
-  PEARL = "#ffe3df",
-  GOLD = "#bd895c",
-  JADE = "#688a70";
+const PINK = "#e68fa8",
+  PEARL = "#f7dfdc",
+  GOLD = "#c29458",
+  JADE = "#78965f";
 const TAU = Math.PI * 2;
 const damp = THREE.MathUtils.damp;
 const randomBetween = (min, max) => min + Math.random() * (max - min);
@@ -2306,98 +2306,37 @@ function DiscoveryEffect({ reaction, reducedMotion }) {
 }
 
 function DanceEffect({ motion, strength = 1 }) {
-  const ribbons = useRef();
-  const sparks = useRef();
   const floor = useRef();
-  const visual = 0.52 + strength * 0.48;
+  const visual = 0.5 + strength * 0.5;
 
   useFrame(({ clock }) => {
-    const time = clock.elapsedTime;
-    const speed = motion ? 1 : 0.28;
-
-    ribbons.current?.children.forEach((mesh, i) => {
-      mesh.rotation.y =
-        time * (0.5 + i * 0.09) * speed * (i % 2 ? -1 : 1);
-      mesh.rotation.z =
-        (i - 1) * 0.18 + Math.sin(time * 0.7 + i) * 0.08 * speed;
-      mesh.material.opacity =
-        (0.11 + (Math.sin(time * 1.4 + i) + 1) * 0.035) * visual;
-    });
-
-    sparks.current?.children.forEach((child, i) => {
-      const phase = (time * 0.16 * speed + i / 18) % 1;
-      const angle = i * 2.17 + phase * TAU * 1.3;
-      const radius = 0.58 + (i % 4) * 0.13 + Math.sin(phase * Math.PI) * 0.18;
-      child.position.set(
-        Math.sin(angle) * radius,
-        -0.72 + phase * 2.55,
-        Math.cos(angle) * radius * 0.52,
-      );
-      child.rotation.z = angle + phase * 2.2;
-      const envelope = Math.sin(Math.PI * phase);
-      child.scale.setScalar(0.5 + envelope * 0.7);
-      child.material.opacity = envelope * 0.42 * visual;
-    });
-
+    const speed = motion ? 1 : 0.25;
     floor.current?.children.forEach((mesh, i) => {
-      const phase = (time * 0.32 * speed + i * 0.33) % 1;
-      mesh.scale.setScalar(0.72 + phase * 0.72);
-      mesh.material.opacity = (1 - phase) * 0.18 * visual;
+      const phase = (clock.elapsedTime * 0.36 * speed + i * 0.48) % 1;
+      mesh.scale.setScalar(0.82 + phase * 0.34);
+      mesh.material.opacity = (1 - phase) * 0.1 * visual;
     });
   });
 
   return (
-    <group>
-      <group ref={ribbons} position={[0, -0.08, -0.02]}>
-        {[0, 1, 2].map((i) => (
-          <mesh
-            key={i}
-            rotation={[1.12 + i * 0.14, i * 0.45, (i - 1) * 0.18]}
-          >
-            <torusGeometry
-              args={[0.82 + i * 0.16, 0.009 + i * 0.002, 8, 96, Math.PI * 1.55]}
-            />
-            <meshBasicMaterial
-              color={i === 1 ? "#e8bf70" : i === 2 ? "#a8c996" : "#efa8c0"}
-              transparent
-              opacity={0.14}
-              depthWrite={false}
-              blending={THREE.AdditiveBlending}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      <group ref={sparks}>
-        {Array.from({ length: 18 }, (_, i) => (
-          <mesh key={i} rotation={[0, 0, i * 0.37]}>
-            <octahedronGeometry args={[0.025 + (i % 3) * 0.006, 0]} />
-            <meshBasicMaterial
-              color={i % 3 === 0 ? "#edbd69" : i % 2 ? "#f4b2c7" : "#bfd5a9"}
-              transparent
-              opacity={0.36}
-              depthWrite={false}
-              blending={THREE.AdditiveBlending}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      <group ref={floor} position={[0, -1.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        {[0, 1, 2].map((i) => (
-          <mesh key={i}>
-            <ringGeometry args={[0.48 + i * 0.08, 0.492 + i * 0.08, 72]} />
-            <meshBasicMaterial
-              color={i % 2 ? "#edbd69" : "#efabc0"}
-              transparent
-              opacity={0.14}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-              blending={THREE.AdditiveBlending}
-            />
-          </mesh>
-        ))}
-      </group>
+    <group
+      ref={floor}
+      position={[0, -1.045, 0]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      {[0, 1].map((i) => (
+        <mesh key={i}>
+          <ringGeometry args={[0.52 + i * 0.11, 0.532 + i * 0.11, 72]} />
+          <meshBasicMaterial
+            color={i ? "#c6a25f" : "#df8fa8"}
+            transparent
+            opacity={0.1}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -2526,6 +2465,7 @@ export default function SenModel({
     const headHover = hoveredTarget === "head" ? 1 : 0;
     const headPat = reaction.type === "head_pat" ? reactionEnvelope : 0;
     const shy = reaction.type === "secret_shy" ? reactionEnvelope : 0;
+    const patCenter = Math.max(headPat, shy);
     const petalDance =
       reaction.type === "secret_petal_dance" ? reactionEnvelope : 0;
     const isDanceState = state === "dance";
@@ -2534,7 +2474,7 @@ export default function SenModel({
       reaction.type === "secret_petal_dance";
     const balletActive = isDanceState || balletReaction;
     const danceT = isDanceState
-      ? (t % 5.6) / 5.6
+      ? (t % 4.0) / 4.0
       : THREE.MathUtils.clamp(reactionAge, 0, 1);
     const balletEnter = balletReaction
       ? THREE.MathUtils.smoothstep(danceT, 0.015, 0.075)
@@ -2548,67 +2488,42 @@ export default function SenModel({
         ? balletEnter * balletExit * (reaction.intensity ?? 1)
         : 0;
 
-    // Human-like choreography:
-    // plié -> open arms -> pirouette -> travelling arabesque -> bow.
-    const prepPose = motionWindow(danceT, 0.0, 0.045, 0.12, 0.19);
-    const openPose = motionWindow(danceT, 0.1, 0.18, 0.3, 0.39);
-    const turnPose = motionWindow(danceT, 0.27, 0.34, 0.57, 0.64);
-    const arabesquePose = motionWindow(danceT, 0.57, 0.66, 0.8, 0.88);
-    const finishPose = motionWindow(danceT, 0.84, 0.9, 0.975, 1);
-    // Front -> profile -> back hold -> profile -> front.
-    // The brief back hold makes Sen's orientation legible instead of reading as a symmetric spin.
-    const faceToProfile =
-      THREE.MathUtils.smootherstep(danceT, 0.285, 0.34) * (Math.PI / 2);
-    const profileToBack =
-      THREE.MathUtils.smootherstep(danceT, 0.34, 0.405) * (Math.PI / 2);
-    const backToProfile =
-      THREE.MathUtils.smootherstep(danceT, 0.49, 0.55) * (Math.PI / 2);
-    const profileToFront =
-      THREE.MathUtils.smootherstep(danceT, 0.55, 0.62) * (Math.PI / 2);
-    const pirouetteAngle =
-      (faceToProfile + profileToBack + backToProfile + profileToFront) *
-      danceMotion;
-    const backReveal = motionWindow(danceT, 0.395, 0.43, 0.485, 0.52);
-    const danceYawTarget =
-      pirouetteAngle +
-      arabesquePose * 0.34 * danceMotion -
-      finishPose * 0.1 * danceMotion;
+    // Four readable beats: settle -> open -> one turn -> soft bow.
+    const prepPose = motionWindow(danceT, 0.0, 0.06, 0.14, 0.22);
+    const openPose = motionWindow(danceT, 0.14, 0.24, 0.38, 0.48);
+    const turnPose = motionWindow(danceT, 0.34, 0.42, 0.68, 0.76);
+    const finishPose = motionWindow(danceT, 0.72, 0.82, 0.97, 1);
+
+    const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.39, 0.72);
+    const pirouetteAngle = turnProgress * TAU * danceMotion;
+    const danceYawTarget = pirouetteAngle;
+
+    // Head spotting is deliberately subtle; body orientation now carries the turn.
     const headSpot =
-      -pirouetteAngle * 0.68 +
-      backReveal * 0.2 * danceMotion +
-      Math.sin(danceT * Math.PI * 6) *
-        0.06 *
+      -pirouetteAngle * 0.34 +
+      Math.sin(turnProgress * Math.PI * 2) *
+        0.035 *
         turnPose *
         danceMotion;
+
     const danceLift =
-      (-prepPose * 0.055 +
-        openPose * 0.105 +
-        turnPose * 0.205 +
-        arabesquePose * 0.14 -
-        finishPose * 0.045) *
-      balletDance *
-      danceMotion;
-    const danceTravelX =
-      (-openPose * 0.055 +
-        turnPose * 0.045 +
-        backReveal * 0.035 +
-        arabesquePose * 0.24 -
-        finishPose * 0.07) *
-      balletDance *
-      danceMotion;
-    const danceTravelZ =
-      (turnPose * 0.045 +
-        backReveal * 0.075 +
-        arabesquePose * 0.13) *
-      balletDance *
-      danceMotion;
-    const danceTorsoTilt =
-      (-prepPose * 0.035 -
+      (-prepPose * 0.035 +
         openPose * 0.055 +
-        arabesquePose * 0.14 +
-        finishPose * 0.04) *
+        turnPose * 0.115 -
+        finishPose * 0.03) *
       balletDance *
       danceMotion;
+
+    // No lateral travelling during the basic dance. This keeps the action legible.
+    const danceTravelX = 0;
+    const danceTravelZ = 0;
+    const danceTorsoTilt =
+      (-prepPose * 0.018 +
+        openPose * 0.022 +
+        finishPose * 0.025) *
+      balletDance *
+      danceMotion;
+
     const nightFireflies =
       reaction.type === "secret_night_fireflies" ? reactionEnvelope : 0;
     const quietGaze =
@@ -2784,7 +2699,7 @@ export default function SenModel({
     const emergence = THREE.MathUtils.smoothstep(bloom.current, 0.2, 0.72);
     const folded = 1 - emergence;
     const danceStretch =
-      (openPose * 0.025 + turnPose * 0.045 + arabesquePose * 0.035) *
+      (openPose * 0.018 + turnPose * 0.028) *
       balletDance *
       danceMotion;
     awake.current.scale.set(
@@ -2799,10 +2714,9 @@ export default function SenModel({
       awake.current.rotation.x,
       0.075 * folded -
         gazeY * 0.018 * emergence +
-        prepPose * 0.055 -
-        arabesquePose * 0.07 * balletDance * danceMotion +
-        finishPose * 0.12 * balletDance * danceMotion,
-      balletActive ? 7 : 2.6,
+        prepPose * 0.028 * balletDance * danceMotion +
+        finishPose * 0.055 * balletDance * danceMotion,
+      balletActive ? 6 : 2.6,
       delta,
     );
     awake.current.rotation.y = damp(
@@ -2821,9 +2735,8 @@ export default function SenModel({
           hoverControl *
           motion *
           (0.7 + presenceCalm * 0.3) +
-        arabesquePose * 0.09 * balletDance * danceMotion -
-        finishPose * 0.035 * balletDance * danceMotion,
-      balletActive ? 7 : 2.5,
+        finishPose * 0.018 * balletDance * danceMotion,
+      balletActive ? 6 : 2.5,
       delta,
     );
     head.current.position.y = damp(
@@ -2843,28 +2756,26 @@ export default function SenModel({
         ambientSway * 0.68 +
         Math.sin(t * 0.65) * 0.006 * motion +
         idleTilt * 0.55 +
-        Math.sin(reactionAge * Math.PI * 3) * headPat * 0.065 +
-        shy * 0.13 +
-        quietGaze * 0.045 +
-        arabesquePose * 0.15 * balletDance * danceMotion -
-        finishPose * 0.075 * balletDance * danceMotion,
+        Math.sin(reactionAge * Math.PI * 2) * headPat * 0.028 +
+        quietGaze * 0.045 -
+        finishPose * 0.03 * balletDance * danceMotion,
       headHover ? 4.5 : balletActive ? 8 : state === "sleep" ? 1.8 : 2.8,
       delta,
     );
     head.current.rotation.y = damp(
       head.current.rotation.y,
-      gazeX *
-        (headHover ? 0.21 : 0.17) *
-        emergence *
-        (1 - quietGaze * 0.92) +
+      (
+        gazeX *
+          (headHover ? 0.21 : 0.17) *
+          emergence *
+          (1 - quietGaze * 0.92) +
         idleLook * 0.45 * (1 - quietGaze) +
         ambientHeadYaw +
-        gestureYaw +
-        shy * 0.18 +
-        headSpot +
-        arabesquePose * 0.18 * balletDance * danceMotion -
-        finishPose * 0.11 * balletDance * danceMotion,
-      headHover ? 6.2 : balletActive ? 9 : state === "sleep" ? 1.7 : state === "working" ? 4.8 : 3.6,
+        gestureYaw
+      ) *
+        (1 - patCenter) +
+        headSpot,
+      headHover ? 6.2 : balletActive ? 8 : state === "sleep" ? 1.7 : state === "working" ? 4.8 : 3.6,
       delta,
     );
     head.current.rotation.x = damp(
@@ -2873,10 +2784,9 @@ export default function SenModel({
         gazeY * (headHover ? 0.105 : 0.082) * emergence +
         ambientHeadPitch +
         gestureTilt +
-        prepPose * 0.075 * balletDance * danceMotion -
-        openPose * 0.035 * balletDance * danceMotion -
-        arabesquePose * 0.065 * balletDance * danceMotion +
-        finishPose * 0.18 * balletDance * danceMotion +
+        prepPose * 0.035 * balletDance * danceMotion -
+        openPose * 0.014 * balletDance * danceMotion +
+        finishPose * 0.09 * balletDance * danceMotion +
         Math.sin(t * 0.13 + 2.2) * 0.008 * autonomous * presenceCalm +
         headPat * 0.075 +
         shy * 0.055 -
@@ -2931,115 +2841,91 @@ export default function SenModel({
       const armGroup = armPetals.current[side];
       if (armGroup) {
         const armOpen =
-          openPose * 0.72 +
-          turnPose * 0.58 +
-          arabesquePose * (side < 0 ? 0.98 : 0.68) +
-          finishPose * 0.22;
+          (openPose * 0.62 + turnPose * 0.5 + finishPose * 0.16) *
+          balletDance *
+          danceMotion;
         const armHeight =
-          openPose * 0.035 +
-          turnPose * 0.06 +
-          arabesquePose * (side < 0 ? 0.19 : 0.075) -
-          finishPose * 0.02;
+          (openPose * 0.028 + turnPose * 0.04 - finishPose * 0.012) *
+          balletDance *
+          danceMotion;
+
         armGroup.rotation.z = damp(
           armGroup.rotation.z,
-          side * armOpen * 0.92 * balletDance * danceMotion,
-          balletActive ? 11 : 6,
+          side * armOpen * 0.72,
+          balletActive ? 9 : 6,
           delta,
         );
         armGroup.rotation.y = damp(
           armGroup.rotation.y,
-          -side *
-            (turnPose * 0.22 + arabesquePose * 0.16) *
-            balletDance *
-            danceMotion,
-          balletActive ? 10 : 6,
+          -side * turnPose * 0.08 * balletDance * danceMotion,
+          balletActive ? 8 : 6,
           delta,
         );
         armGroup.rotation.x = damp(
           armGroup.rotation.x,
-          (side < 0 ? -0.12 : 0.07) *
-            arabesquePose *
-            balletDance *
-            danceMotion,
-          balletActive ? 10 : 6,
+          0,
+          balletActive ? 8 : 6,
           delta,
         );
         armGroup.position.x = damp(
           armGroup.position.x,
-          side * (openPose * 0.025 + arabesquePose * 0.055) * balletDance,
-          9,
+          side * openPose * 0.018 * balletDance,
+          8,
           delta,
         );
         armGroup.position.y = damp(
           armGroup.position.y,
-          armHeight * balletDance * danceMotion,
-          10,
+          armHeight,
+          9,
           delta,
         );
       }
     });
     if (skirt.current) {
       const flare =
-        (openPose * 0.28 +
-          turnPose * 0.92 +
-          arabesquePose * 0.62 +
-          finishPose * 0.12) *
+        (openPose * 0.16 + turnPose * 0.46 + finishPose * 0.07) *
         balletDance *
         danceMotion;
-      const skirtSweep =
-        (-openPose * 0.045 +
-          turnPose * 0.025 +
-          arabesquePose * 0.15 -
-          finishPose * 0.07) *
-        balletDance *
-        danceMotion;
+      const skirtSweep = turnPose * 0.028 * balletDance * danceMotion;
 
       skirt.current.scale.x = damp(
         skirt.current.scale.x,
-        1 + flare * 0.5,
-        balletActive ? 11 : 4,
+        1 + flare * 0.28,
+        balletActive ? 9 : 4,
         delta,
       );
       skirt.current.scale.y = damp(
         skirt.current.scale.y,
-        1 - flare * 0.145,
-        balletActive ? 11 : 4,
+        1 - flare * 0.075,
+        balletActive ? 9 : 4,
         delta,
       );
       skirt.current.scale.z = damp(
         skirt.current.scale.z,
-        1 + flare * 0.43,
-        balletActive ? 11 : 4,
+        1 + flare * 0.24,
+        balletActive ? 9 : 4,
         delta,
       );
 
       if (balletActive) {
-        skirt.current.rotation.y =
-          danceYawTarget - turnPose * 0.2 * danceMotion;
+        skirt.current.rotation.y = danceYawTarget - turnPose * 0.08 * danceMotion;
       } else {
         skirt.current.rotation.y = Math.atan2(
           Math.sin(skirt.current.rotation.y),
           Math.cos(skirt.current.rotation.y),
         );
-        skirt.current.rotation.y = damp(
-          skirt.current.rotation.y,
-          0,
-          4,
-          delta,
-        );
+        skirt.current.rotation.y = damp(skirt.current.rotation.y, 0, 4, delta);
       }
       skirt.current.rotation.z = damp(
         skirt.current.rotation.z,
         skirtSweep,
-        balletActive ? 12 : 4,
+        balletActive ? 9 : 4,
         delta,
       );
       skirt.current.position.y = damp(
         skirt.current.position.y,
-        turnPose * 0.035 * balletDance +
-          arabesquePose * 0.02 * balletDance -
-          finishPose * 0.02 * balletDance,
-        balletActive ? 10 : 4,
+        turnPose * 0.018 * balletDance - finishPose * 0.012 * balletDance,
+        balletActive ? 8 : 4,
         delta,
       );
     }
@@ -3221,9 +3107,9 @@ export default function SenModel({
           <Petal
             position={[0, -0.56, -0.01]}
             rotation={[0.12, Math.PI, 0]}
-            scale={[0.72, 1.02, 0.58]}
-            color={personalPalette.leaf}
-            accent={personalPalette.gold}
+            scale={[0.76, 1.04, 0.6]}
+            color="#78985f"
+            accent="#c59a57"
             bend={0.18}
             leaf
           />
@@ -3232,9 +3118,9 @@ export default function SenModel({
               key={`back-mantle-${side}`}
               position={[side * 0.34, -0.42, 0]}
               rotation={[0.18, Math.PI + side * 0.18, -side * 0.54]}
-              scale={[0.48, 0.8, 0.48]}
-              color={side < 0 ? personalPalette.leaf : "#7f9b78"}
-              accent={personalPalette.gold}
+              scale={[0.52, 0.84, 0.5]}
+              color={side < 0 ? "#83a466" : "#78985f"}
+              accent="#c59a57"
               bend={0.14}
               leaf
             />
@@ -3297,6 +3183,24 @@ export default function SenModel({
               color={personalPalette.petalPrimary}
               accent={personalPalette.gold}
               ornament
+            />
+            <Petal
+              position={[side * 0.24, -0.58, 0.07]}
+              rotation={[0.2, side * 0.22, -side * 1.1]}
+              scale={[0.52, 0.78, 0.54]}
+              color="#88a96a"
+              accent="#c8a05d"
+              bend={0.16}
+              leaf
+            />
+            <Petal
+              position={[side * 0.62, -0.34, 0.035]}
+              rotation={[0.16, side * 0.28, -side * 2.05]}
+              scale={[0.46, 0.74, 0.5]}
+              color="#78985f"
+              accent="#c8a05d"
+              bend={0.14}
+              leaf
             />
             <group
               ref={(node) => {
