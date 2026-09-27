@@ -2130,7 +2130,9 @@ function DiscoveryEffect({ reaction, reducedMotion }) {
   const ref = useRef();
   const type = reaction?.type ?? "none";
   const active =
-    type.startsWith("secret_") || type.startsWith("ritual_");
+    type.startsWith("secret_") ||
+    type.startsWith("ritual_") ||
+    type === "ballet_dance";
 
   useFrame(({ clock }) => {
     if (!ref.current) return;
@@ -2159,7 +2161,7 @@ function DiscoveryEffect({ reaction, reducedMotion }) {
           0.62 + seed * 0.72 + age * 0.22,
           0.18 + Math.cos(angle) * 0.16,
         );
-      } else if (type === "secret_petal_dance") {
+      } else if (type === "secret_petal_dance" || type === "ballet_dance") {
         const side = i % 2 ? 1 : -1;
         mesh.position.set(
           side * (0.55 + seed * 0.55),
@@ -2294,7 +2296,8 @@ export default function SenModel({
     head = useRef(),
     crystal = useRef(),
     coreAura = useRef(),
-    budLight = useRef();
+    budLight = useRef(),
+    skirt = useRef();
   const sidePetals = useRef({});
   const gazePointer = useGlobalGazePointer();
   const bloom = useRef(state === "sleep" ? 0 : energy / 100);
@@ -2370,6 +2373,14 @@ export default function SenModel({
     const shy = reaction.type === "secret_shy" ? reactionEnvelope : 0;
     const petalDance =
       reaction.type === "secret_petal_dance" ? reactionEnvelope : 0;
+    const balletActive =
+      reaction.type === "ballet_dance" ||
+      reaction.type === "secret_petal_dance";
+    const balletDance = balletActive ? reactionEnvelope : 0;
+    const balletProgress = balletActive
+      ? THREE.MathUtils.smootherstep(reactionAge, 0, 1)
+      : 0;
+    const balletSpin = balletProgress * TAU * 3 * motion;
     const nightFireflies =
       reaction.type === "secret_night_fireflies" ? reactionEnvelope : 0;
     const quietGaze =
@@ -2497,6 +2508,7 @@ export default function SenModel({
       hoverFloat +
         ambientFloat +
         gestureLift +
+        balletDance * motion * (0.11 + Math.abs(Math.sin(balletSpin)) * 0.045) +
         Math.sin(t * (0.92 + presenceCalm * 0.24)) *
           cfg.bob *
           0.3 *
@@ -2510,13 +2522,22 @@ export default function SenModel({
       Math.sin(t * (moodMotion.swaySpeed * 0.72) + 1.2) *
         moodMotion.swayAmp *
         0.6 *
-        ambientScale,
+        ambientScale +
+        Math.sin(balletSpin * 0.5) * 0.12 * balletDance * motion,
       state === "sleep" ? 1.5 : 2.5,
       delta,
     );
+    root.current.position.z = damp(
+      root.current.position.z,
+      Math.cos(balletSpin * 0.5) * 0.055 * balletDance * motion,
+      balletActive ? 8 : 3,
+      delta,
+    );
+    root.current.rotation.y = balletActive ? balletSpin : 0;
     root.current.rotation.z = damp(
       root.current.rotation.z,
-      ambientSway,
+      ambientSway +
+        Math.sin(balletSpin) * 0.075 * balletDance * motion,
       state === "working" ? 4.8 : state === "sleep" ? 1.6 : 2.7,
       delta,
     );
@@ -2587,7 +2608,8 @@ export default function SenModel({
         idleLook * 0.45 * (1 - quietGaze) +
         ambientHeadYaw +
         gestureYaw +
-        shy * 0.18,
+        shy * 0.18 -
+        Math.sin(balletSpin * 0.5) * 0.11 * balletDance * motion,
       headHover ? 6.2 : state === "sleep" ? 1.7 : state === "working" ? 4.8 : 3.6,
       delta,
     );
@@ -2596,7 +2618,8 @@ export default function SenModel({
       0.14 * folded -
         gazeY * (headHover ? 0.105 : 0.082) * emergence +
         ambientHeadPitch +
-        gestureTilt +
+        gestureTilt -
+        balletDance * 0.055 * motion +
         Math.sin(t * 0.13 + 2.2) * 0.008 * autonomous * presenceCalm +
         headPat * 0.075 +
         shy * 0.055 -
@@ -2628,7 +2651,13 @@ export default function SenModel({
         side;
       petalGroup.rotation.z = damp(
         petalGroup.rotation.z,
-        ambientPetal + side * petalHover * 0.035 + flutter,
+        ambientPetal +
+          side * petalHover * 0.035 +
+          flutter +
+          side *
+            balletDance *
+            motion *
+            (0.42 + Math.sin(balletSpin * 2 + side) * 0.055),
         petalHover || petalTouch ? 8 : state === "sleep" ? 1.8 : 3.4,
         delta,
       );
@@ -2639,6 +2668,43 @@ export default function SenModel({
         delta,
       );
     });
+    if (skirt.current) {
+      const flare = balletDance * motion;
+      const lateralFlutter =
+        Math.sin(balletSpin * 2.25) * 0.035 * flare;
+      skirt.current.scale.x = damp(
+        skirt.current.scale.x,
+        1 + flare * 0.25,
+        balletActive ? 9 : 4,
+        delta,
+      );
+      skirt.current.scale.y = damp(
+        skirt.current.scale.y,
+        1 - flare * 0.08,
+        balletActive ? 9 : 4,
+        delta,
+      );
+      skirt.current.scale.z = damp(
+        skirt.current.scale.z,
+        1 + flare * 0.2,
+        balletActive ? 9 : 4,
+        delta,
+      );
+      skirt.current.rotation.y = balletActive ? balletSpin * 0.72 : 0;
+      skirt.current.rotation.z = damp(
+        skirt.current.rotation.z,
+        lateralFlutter,
+        balletActive ? 10 : 4,
+        delta,
+      );
+      skirt.current.position.y = damp(
+        skirt.current.position.y,
+        Math.abs(Math.sin(balletSpin * 1.5)) * 0.022 * flare,
+        balletActive ? 10 : 4,
+        delta,
+      );
+    }
+
     const wakeFlash =
       state === "sleep"
         ? 0
@@ -2952,19 +3018,21 @@ export default function SenModel({
       </group>
       <StateEffects state={state} motion={motion} strength={haloControl} />
       <DiscoveryEffect reaction={reaction} reducedMotion={reducedMotion} />
-      {LOTUS_LAYERS.flatMap((layer, layerIndex) =>
-        Array.from({ length: layer.count }, (_, index) => (
-          <LotusBloomPetal
-            key={layer.key + "-" + index}
-            layer={layer}
-            layerIndex={layerIndex}
-            index={index}
-            bloom={bloom}
-            state={state}
-            motion={motion}
-          />
-        )),
-      )}
+      <group ref={skirt}>
+        {LOTUS_LAYERS.flatMap((layer, layerIndex) =>
+          Array.from({ length: layer.count }, (_, index) => (
+            <LotusBloomPetal
+              key={layer.key + "-" + index}
+              layer={layer}
+              layerIndex={layerIndex}
+              index={index}
+              bloom={bloom}
+              state={state}
+              motion={motion}
+            />
+          )),
+        )}
+      </group>
       {Array.from({ length: 7 }, (_, i) => (
         <group
           key={i}
