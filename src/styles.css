@@ -5386,3 +5386,105 @@ h1 {
     line-height: 1.2;
   }
 }
+
+
+/* Focus typography hard reset: keep every focus HUD label on one UI font and
+   center optical alignment instead of relying on mixed serif baselines. */
+.focus-hud,
+.focus-hud-brand,
+.focus-clock,
+.focus-actions,
+.focus-hud button,
+.focus-hud span,
+.focus-hud strong {
+  font-family: var(--font-ui);
+  font-style: normal;
+}
+
+.focus-hud {
+  line-height: 1;
+}
+
+.focus-hud-brand,
+.focus-actions {
+  align-items: center;
+}
+
+.focus-hud-brand span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  line-height: 1.15;
+  letter-spacing: 0.09em;
+  font-size: 7px;
+  font-weight: 600;
+}
+
+.focus-clock {
+  min-width: 102px;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  column-gap: 7px;
+  padding: 0 3px;
+}
+
+.focus-clock strong {
+  display: block;
+  margin: 0;
+  font-family:
+    "Segoe UI Variable Display",
+    "Aptos Display",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.focus-clock span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  font-family: var(--font-ui);
+  font-size: 7px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.focus-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  line-height: 1;
+  font-family: var(--font-ui);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+@media (max-width: 680px) {
+  .focus-clock {
+    min-width: 94px;
+    column-gap: 6px;
+  }
+
+  .focus-clock strong {
+    font-size: 22px;
+  }
+
+  .focus-hud-brand span,
+  .focus-clock span,
+  .focus-actions button {
+    font-size: 6.5px;
+  }
+}
