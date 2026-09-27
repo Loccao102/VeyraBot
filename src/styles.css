@@ -1,8 +1,25 @@
 :root {
-  font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-ui:
+    "Segoe UI Variable Text",
+    "Aptos",
+    "Segoe UI",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  --font-display:
+    "Sitka Display",
+    "Sitka Text",
+    "Cambria",
+    "Georgia",
+    serif;
+
+  font-family: var(--font-ui);
   color: #493b39;
   background: #f8f5ef;
   font-synthesis: none;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
   font-weight: 400;
   --rose: #a55b70;
   --ink: #493b39;
@@ -5222,5 +5239,150 @@ em {
   .desktop-agent-console {
     left: 10px;
     right: 10px;
+  }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Sen typography pass                                                        */
+/* -------------------------------------------------------------------------- */
+/* Keep the interface on one rhythm: a soft editorial serif for the poetic
+   moments, and one UI sans for controls/status copy. This also fixes the
+   baseline drift caused by mixing Georgia, generic serif and Segoe UI. */
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+}
+
+button,
+input,
+select,
+textarea,
+.scene-tools,
+.garden-statusbar,
+.interaction-toast {
+  font-variant-ligatures: contextual;
+  font-kerning: normal;
+}
+
+.brand strong,
+h1,
+.detail-panel h2,
+.presence-lab-head strong,
+.ritual-panel-head strong,
+.energy-heading div > span,
+.energy-heading output,
+.thought-card p,
+.focus-clock strong,
+.focus-clock span,
+.scene-caption {
+  font-family: var(--font-display);
+}
+
+.brand strong {
+  line-height: 0.94;
+  letter-spacing: -1.35px;
+  margin-bottom: 0;
+  transform: translateY(1px);
+}
+
+h1 {
+  line-height: 1.08;
+  letter-spacing: -1.15px;
+}
+
+.vietnamese-note,
+.scene-caption,
+.thought-card p,
+.energy-heading div > span {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.scene-caption {
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  align-items: baseline;
+}
+
+.scene-tools,
+.scene-tools button,
+.garden-statusbar,
+.garden-status-presence,
+.garden-status-play,
+.interaction-toast,
+.scene-topline,
+.scene-presence,
+.scene-discoveries {
+  font-family: var(--font-ui);
+}
+
+.scene-tools button {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+}
+
+.scene-topline,
+.garden-statusbar {
+  line-height: 1.2;
+}
+
+.garden-status-presence b,
+.garden-status-play,
+.garden-status-presence em {
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+.eyebrow,
+.edition,
+.palette small,
+.presence-lab-head small,
+.presence-lab-hint,
+.ritual-panel-head small,
+.thought-card small,
+.focus-hud-brand span,
+.scene-presence,
+.scene-discoveries {
+  letter-spacing: 0.11em;
+}
+
+.brand > span {
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+}
+
+.detail-panel h2,
+.ritual-panel-head strong,
+.presence-lab-head strong {
+  line-height: 1.18;
+}
+
+.energy-heading output,
+.focus-clock strong {
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.thought-form textarea {
+  font-family: var(--font-ui);
+  line-height: 1.55;
+}
+
+@media (max-width: 680px) {
+  .brand strong {
+    letter-spacing: -0.9px;
+  }
+
+  .scene-caption {
+    line-height: 1.2;
   }
 }
