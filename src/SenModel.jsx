@@ -73,6 +73,7 @@ export const SEN_STATES = {
   thinking: { bloom: -0.12, tilt: -0.12, glow: 0.65, bob: 0.025 },
   listening: { bloom: 0.16, tilt: 0.06, glow: 0.5, bob: 0.025 },
   working: { bloom: 0.08, tilt: 0, glow: 0.8, bob: 0.015 },
+  dance: { bloom: 0.24, tilt: -0.035, glow: 0.95, bob: 0.055 },
   success: { bloom: 0.3, tilt: 0.05, glow: 1, bob: 0.065 },
   sleep: { bloom: -0.3, tilt: 0, glow: 0.08, bob: 0.008 },
 };
@@ -165,6 +166,28 @@ const MOOD_MOTION = {
     hoverSpeed: 0.95,
     hoverSecondaryAmp: 0.01,
     hoverSecondarySpeed: 0.52,
+  },
+  dance: {
+    floatAmp: 0.075,
+    floatSpeed: 1.15,
+    swayAmp: 0.028,
+    swaySpeed: 0.9,
+    headYawAmp: 0.06,
+    headPitchAmp: 0.04,
+    headSpeed: 0.82,
+    breatheAmp: 0.018,
+    breatheSpeed: 1.25,
+    petalAmp: 0.032,
+    corePulseAmp: 0.14,
+    corePulseSpeed: 1.75,
+    lean: -0.025,
+    blinkMin: 3.2,
+    blinkMax: 5.0,
+    blinkDuration: 0.12,
+    hoverAmp: 0.06,
+    hoverSpeed: 1.08,
+    hoverSecondaryAmp: 0.018,
+    hoverSecondarySpeed: 0.58,
   },
   success: {
     floatAmp: 0.09,
@@ -2348,6 +2371,7 @@ export default function SenModel({
   const cfg = SEN_STATES[state] || SEN_STATES.idle;
   const moodMotion = MOOD_MOTION[state] || MOOD_MOTION.idle;
   const motion = reducedMotion ? 0 : 1;
+  const danceMotion = reducedMotion ? 0.35 : 1;
   const ambientMotion = reducedMotion ? 0.35 : 1;
   useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime;
@@ -2373,14 +2397,32 @@ export default function SenModel({
     const shy = reaction.type === "secret_shy" ? reactionEnvelope : 0;
     const petalDance =
       reaction.type === "secret_petal_dance" ? reactionEnvelope : 0;
-    const balletActive =
+    const isDanceState = state === "dance";
+    const balletReaction =
       reaction.type === "ballet_dance" ||
       reaction.type === "secret_petal_dance";
-    const balletDance = balletActive ? reactionEnvelope : 0;
-    const balletProgress = balletActive
-      ? THREE.MathUtils.smootherstep(reactionAge, 0, 1)
+    const balletActive = isDanceState || balletReaction;
+    const balletEnter = balletReaction
+      ? THREE.MathUtils.smoothstep(reactionAge, 0.02, 0.14)
+      : 1;
+    const balletExit = balletReaction
+      ? 1 - THREE.MathUtils.smoothstep(reactionAge, 0.82, 0.98)
+      : 1;
+    const balletDance = isDanceState
+      ? 1
+      : balletActive
+        ? balletEnter * balletExit * (reaction.intensity ?? 1)
+        : 0;
+    const balletProgress = isDanceState
+      ? (t * 0.68) % 1
+      : THREE.MathUtils.smootherstep(reactionAge, 0.05, 0.84);
+    const balletSpin = isDanceState
+      ? t * 4.55 * danceMotion
+      : balletProgress * TAU * 3.25 * danceMotion;
+    const balletFinish = balletReaction
+      ? THREE.MathUtils.smoothstep(reactionAge, 0.82, 0.94) *
+        (1 - THREE.MathUtils.smoothstep(reactionAge, 0.95, 1))
       : 0;
-    const balletSpin = balletProgress * TAU * 3 * motion;
     const nightFireflies =
       reaction.type === "secret_night_fireflies" ? reactionEnvelope : 0;
     const quietGaze =
@@ -2508,7 +2550,10 @@ export default function SenModel({
       hoverFloat +
         ambientFloat +
         gestureLift +
-        balletDance * motion * (0.11 + Math.abs(Math.sin(balletSpin)) * 0.045) +
+        balletDance *
+          danceMotion *
+          (0.18 + Math.abs(Math.sin(balletSpin)) * 0.085) -
+        balletFinish * 0.055 * danceMotion +
         Math.sin(t * (0.92 + presenceCalm * 0.24)) *
           cfg.bob *
           0.3 *
@@ -2523,21 +2568,27 @@ export default function SenModel({
         moodMotion.swayAmp *
         0.6 *
         ambientScale +
-        Math.sin(balletSpin * 0.5) * 0.12 * balletDance * motion,
+        Math.sin(balletSpin * 0.5) * 0.2 * balletDance * danceMotion,
       state === "sleep" ? 1.5 : 2.5,
       delta,
     );
     root.current.position.z = damp(
       root.current.position.z,
-      Math.cos(balletSpin * 0.5) * 0.055 * balletDance * motion,
+      Math.cos(balletSpin * 0.5) * 0.12 * balletDance * danceMotion,
       balletActive ? 8 : 3,
       delta,
     );
-    root.current.rotation.y = balletActive ? balletSpin : 0;
+    root.current.rotation.y = damp(
+      root.current.rotation.y,
+      balletActive ? balletSpin : 0,
+      balletActive ? 12 : 4.5,
+      delta,
+    );
     root.current.rotation.z = damp(
       root.current.rotation.z,
       ambientSway +
-        Math.sin(balletSpin) * 0.075 * balletDance * motion,
+        Math.sin(balletSpin) * 0.11 * balletDance * danceMotion +
+        balletFinish * 0.08,
       state === "working" ? 4.8 : state === "sleep" ? 1.6 : 2.7,
       delta,
     );
@@ -2609,7 +2660,7 @@ export default function SenModel({
         ambientHeadYaw +
         gestureYaw +
         shy * 0.18 -
-        Math.sin(balletSpin * 0.5) * 0.11 * balletDance * motion,
+        Math.sin(balletSpin * 0.5) * 0.18 * balletDance * danceMotion,
       headHover ? 6.2 : state === "sleep" ? 1.7 : state === "working" ? 4.8 : 3.6,
       delta,
     );
@@ -2619,7 +2670,8 @@ export default function SenModel({
         gazeY * (headHover ? 0.105 : 0.082) * emergence +
         ambientHeadPitch +
         gestureTilt -
-        balletDance * 0.055 * motion +
+        balletDance * 0.1 * danceMotion +
+        balletFinish * 0.17 +
         Math.sin(t * 0.13 + 2.2) * 0.008 * autonomous * presenceCalm +
         headPat * 0.075 +
         shy * 0.055 -
@@ -2656,8 +2708,9 @@ export default function SenModel({
           flutter +
           side *
             balletDance *
-            motion *
-            (0.42 + Math.sin(balletSpin * 2 + side) * 0.055),
+            danceMotion *
+            (0.75 + Math.sin(balletSpin * 2 + side) * 0.12) +
+          side * balletFinish * 0.18,
         petalHover || petalTouch ? 8 : state === "sleep" ? 1.8 : 3.4,
         delta,
       );
@@ -2669,28 +2722,33 @@ export default function SenModel({
       );
     });
     if (skirt.current) {
-      const flare = balletDance * motion;
+      const flare = balletDance * danceMotion;
       const lateralFlutter =
-        Math.sin(balletSpin * 2.25) * 0.035 * flare;
+        Math.sin(balletSpin * 2.25) * 0.11 * flare;
       skirt.current.scale.x = damp(
         skirt.current.scale.x,
-        1 + flare * 0.25,
+        1 + flare * 0.55,
         balletActive ? 9 : 4,
         delta,
       );
       skirt.current.scale.y = damp(
         skirt.current.scale.y,
-        1 - flare * 0.08,
+        1 - flare * 0.16,
         balletActive ? 9 : 4,
         delta,
       );
       skirt.current.scale.z = damp(
         skirt.current.scale.z,
-        1 + flare * 0.2,
+        1 + flare * 0.48,
         balletActive ? 9 : 4,
         delta,
       );
-      skirt.current.rotation.y = balletActive ? balletSpin * 0.72 : 0;
+      skirt.current.rotation.y = damp(
+        skirt.current.rotation.y,
+        balletActive ? balletSpin * 0.76 : 0,
+        balletActive ? 14 : 4,
+        delta,
+      );
       skirt.current.rotation.z = damp(
         skirt.current.rotation.z,
         lateralFlutter,
@@ -2699,7 +2757,8 @@ export default function SenModel({
       );
       skirt.current.position.y = damp(
         skirt.current.position.y,
-        Math.abs(Math.sin(balletSpin * 1.5)) * 0.022 * flare,
+        Math.abs(Math.sin(balletSpin * 1.5)) * 0.05 * flare -
+          balletFinish * 0.025,
         balletActive ? 10 : 4,
         delta,
       );
