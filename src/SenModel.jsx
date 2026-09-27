@@ -7,6 +7,13 @@ const PINK = "#e68fa8",
   PEARL = "#f7dfdc",
   GOLD = "#c29458",
   JADE = "#78965f";
+
+const POND_MOSS = "#536b46";
+const POND_LEAF = "#647f52";
+const POND_LEAF_LIGHT = "#829b68";
+const POND_VEIN = "#aeb881";
+const POND_PEARL = "#eee5d8";
+const POND_GOLD = "#c6a15f";
 const TAU = Math.PI * 2;
 const damp = THREE.MathUtils.damp;
 const randomBetween = (min, max) => min + Math.random() * (max - min);
@@ -967,7 +974,7 @@ function BloomAura({ bloom, motion, state }) {
         <mesh key={i}>
           <ringGeometry args={[0.72 + i * 0.12, 0.735 + i * 0.12, 96]} />
           <meshBasicMaterial
-            color={i === 0 ? "#f29aad" : "#d9a67c"}
+            color={i === 0 ? "#d989a1" : i === 1 ? POND_GOLD : POND_LEAF_LIGHT}
             transparent
             opacity={0}
             depthWrite={false}
@@ -1000,9 +1007,9 @@ function Ripples({ state, motion, bloom }) {
         <mesh key={i}>
           <ringGeometry args={[1.1, 1.108, 96]} />
           <meshBasicMaterial
-            color={JADE}
+            color={i === 0 ? POND_MOSS : i === 1 ? POND_LEAF : POND_LEAF_LIGHT}
             transparent
-            opacity={0.1}
+            opacity={0.14}
             side={THREE.DoubleSide}
             depthWrite={false}
           />
@@ -1046,7 +1053,7 @@ function TouchRipple({ ripple, reducedMotion }) {
     >
       <ringGeometry args={chorus ? [0.05, 0.068, 64] : [0.055, 0.068, 56]} />
       <meshBasicMaterial
-        color={rain ? "#a9a2ad" : chorus ? "#c38ca0" : "#7f9987"}
+        color={rain ? "#8c9980" : chorus ? POND_GOLD : POND_LEAF_LIGHT}
         transparent
         opacity={0}
         depthWrite={false}
@@ -1188,8 +1195,8 @@ function AdaptiveGardenSignature({ personal, reducedMotion }) {
               <Petal
                 rotation={[1.34, 0, 0]}
                 scale={[0.15, 0.24, 0.1]}
-                color={i % 2 ? pink : dna.petalSoft ?? PEARL}
-                accent={gold}
+                color={i % 2 ? "#d98aa1" : POND_PEARL}
+                accent={POND_GOLD}
               />
             </group>
           );
@@ -1326,38 +1333,51 @@ function PersonalGardenGrowth({ personal, reducedMotion }) {
               scale={[scale, scale * 0.62, 1]}
             >
               <circleGeometry args={[0.24, 48]} />
-              <meshPhysicalMaterial
-                color={leafColor}
-                roughness={0.52}
-                metalness={0.035}
-                clearcoat={0.26}
+              <meshBasicMaterial
+                color={index % 2 === 0 ? POND_MOSS : POND_LEAF}
                 side={THREE.DoubleSide}
+                toneMapped={false}
               />
             </mesh>
             <mesh
-              position={[0, 0.006, 0]}
+              position={[0, 0.007, 0]}
               rotation={[-Math.PI / 2, 0, 0]}
               scale={[scale, scale * 0.62, 1]}
             >
-              <ringGeometry args={[0.216, 0.231, 48]} />
+              <ringGeometry args={[0.214, 0.232, 48]} />
               <meshBasicMaterial
-                color={goldColor}
+                color={POND_GOLD}
                 transparent
-                opacity={0.34}
+                opacity={0.52}
                 depthWrite={false}
                 side={THREE.DoubleSide}
+                toneMapped={false}
               />
             </mesh>
             <Line
               points={[
-                [0, 0.009, -0.13 * scale],
-                [0, 0.011, 0.12 * scale],
+                [0, 0.012, -0.14 * scale],
+                [0, 0.013, 0.12 * scale],
               ]}
-              color="#b9c58e"
-              lineWidth={0.8}
+              color={POND_VEIN}
+              lineWidth={1}
               transparent
-              opacity={0.62}
+              opacity={0.82}
             />
+            <mesh
+              position={[0, 0.012, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <circleGeometry args={[0.018, 20]} />
+              <meshBasicMaterial
+                color={POND_PEARL}
+                transparent
+                opacity={0.72}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+                toneMapped={false}
+              />
+            </mesh>
           </group>
         ))}
 
@@ -1371,8 +1391,8 @@ function PersonalGardenGrowth({ personal, reducedMotion }) {
           >
             <dodecahedronGeometry args={[1, 0]} />
             <meshStandardMaterial
-              color={index % 2 ? "#b8aaa2" : "#c8bbb0"}
-              roughness={0.82}
+              color={index % 2 ? "#a99b89" : "#c8b89f"}
+              roughness={0.86}
             />
           </mesh>
         ))}
