@@ -2494,6 +2494,10 @@ export default function SenModel({
     const headPat = reaction.type === "head_pat" ? reactionEnvelope : 0;
     const shy = reaction.type === "secret_shy" ? reactionEnvelope : 0;
     const patCenter = Math.max(headPat, shy);
+    const headInteractionLock =
+      headHover > 0 ||
+      reaction.type === "head_pat" ||
+      reaction.type === "secret_shy";
     const petalDance =
       reaction.type === "secret_petal_dance" ? reactionEnvelope : 0;
     const isDanceState = state === "dance";
@@ -2525,7 +2529,10 @@ export default function SenModel({
     const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.34, 0.76);
     const frontSettle = THREE.MathUtils.smootherstep(danceT, 0.8, 0.965);
     const headCenterLock = THREE.MathUtils.clamp(
-      Math.max(patCenter, balletActive ? frontSettle : 0),
+      Math.max(
+        headInteractionLock ? 1 : patCenter,
+        balletActive ? frontSettle : 0,
+      ),
       0,
       1,
     );
@@ -2774,14 +2781,16 @@ export default function SenModel({
     );
     awake.current.rotation.z = damp(
       awake.current.rotation.z,
-      ambientSway * 0.42 +
-        Math.sin(t * 0.48) *
-          0.007 *
-          hoverControl *
-          motion *
-          (0.7 + presenceCalm * 0.3) +
-        finishPose * 0.018 * balletDance * danceMotion,
-      balletActive ? 6 : 2.5,
+      headInteractionLock
+        ? 0
+        : ambientSway * 0.42 +
+          Math.sin(t * 0.48) *
+            0.007 *
+            hoverControl *
+            motion *
+            (0.7 + presenceCalm * 0.3) +
+          finishPose * 0.018 * balletDance * danceMotion,
+      headInteractionLock ? 12 : balletActive ? 6 : 2.5,
       delta,
     );
     head.current.position.y = damp(
@@ -2837,18 +2846,28 @@ export default function SenModel({
     );
     head.current.rotation.x = damp(
       head.current.rotation.x,
-      0.14 * folded -
-        gazeY * (headHover ? 0.105 : 0.082) * emergence +
-        ambientHeadPitch +
-        gestureTilt +
-        prepPose * 0.035 * balletDance * danceMotion -
-        openPose * 0.014 * balletDance * danceMotion +
-        finishPose * 0.09 * balletDance * danceMotion +
-        Math.sin(t * 0.13 + 2.2) * 0.008 * autonomous * presenceCalm +
-        headPat * 0.075 +
-        shy * 0.055 -
-        quietGaze * 0.028,
-      headHover ? 6.2 : balletActive ? 9 : state === "sleep" ? 1.7 : state === "working" ? 4.6 : 3.7,
+      headInteractionLock
+        ? headPat * 0.09 + shy * 0.055
+        : 0.14 * folded -
+          gazeY * (headHover ? 0.105 : 0.082) * emergence +
+          ambientHeadPitch +
+          gestureTilt +
+          prepPose * 0.035 * balletDance * danceMotion -
+          openPose * 0.014 * balletDance * danceMotion +
+          finishPose * 0.09 * balletDance * danceMotion +
+          Math.sin(t * 0.13 + 2.2) * 0.008 * autonomous * presenceCalm -
+          quietGaze * 0.028,
+      headInteractionLock
+        ? 12
+        : headHover
+          ? 6.2
+          : balletActive
+            ? 9
+            : state === "sleep"
+              ? 1.7
+              : state === "working"
+                ? 4.6
+                : 3.7,
       delta,
     );
 
@@ -3408,30 +3427,21 @@ export default function SenModel({
         )}
       </group>
       {Array.from({ length: 7 }, (_, i) => {
-        const outerLeaf = i % 2 === 0 ? "#6f8f58" : "#82a067";
-        const innerLeaf = i % 2 === 0 ? "#4f6b43" : "#607d4d";
+        const leafColor = i % 2 === 0 ? "#5f7f4c" : "#73945a";
 
         return (
           <group
             key={i}
-            position={[0, -1.025, 0]}
+            position={[0, -1.055, 0]}
             rotation={[0, (i / 7) * TAU, 0]}
           >
             <Petal
-              position={[0, 0, -0.015]}
-              rotation={[1.32, 0, 0]}
-              scale={[0.68, 0.95, 0.42]}
-              color={outerLeaf}
+              position={[0, 0, 0.3]}
+              rotation={[1.3, 0, 0]}
+              scale={[0.64, 0.88, 0.38]}
+              color={leafColor}
               accent="#c29b59"
-              leaf
-            />
-            <Petal
-              position={[0, -0.012, -0.052]}
-              rotation={[1.29, 0, 0]}
-              scale={[0.53, 0.76, 0.32]}
-              color={innerLeaf}
-              accent="#aeb880"
-              bend={0.18}
+              bend={0.14}
               leaf
             />
           </group>
