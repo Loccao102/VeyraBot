@@ -1281,12 +1281,19 @@ function PersonalGardenGrowth({ personal, reducedMotion }) {
   const goldColor = dna.gold ?? GOLD;
   const coreColor = dna.coreGlow ?? "#ec96a7";
 
+  // Keep the pond silhouette recognizable even for a brand-new Sen.
+  // These leaves used to depend entirely on garden level, which made them
+  // disappear when personal progress reset or a different preview origin was used.
   const leaves = [
-    [-1.26, -1.097, 0.48, -0.24, 1.08],
-    [1.28, -1.098, 0.37, 0.2, 0.92],
-    [-1.48, -1.099, -0.18, 0.12, 0.78],
-    [1.5, -1.099, -0.28, -0.16, 0.72],
+    [-1.2, -1.045, 0.5, -0.24, 1.28],
+    [1.22, -1.048, 0.4, 0.2, 1.12],
+    [-1.48, -1.052, -0.12, 0.12, 0.94],
+    [1.5, -1.054, -0.24, -0.16, 0.88],
   ];
+  const visibleLeafCount = Math.min(
+    leaves.length,
+    Math.max(2, level + 1),
+  );
   const stones = [
     [-1.58, -1.02, 0.08, 0.14],
     [1.64, -1.03, 0.04, 0.11],
@@ -1299,37 +1306,53 @@ function PersonalGardenGrowth({ personal, reducedMotion }) {
         personal={personal}
         reducedMotion={reducedMotion}
       />
-      {level >= 2 &&
-        leaves.slice(0, Math.min(leaves.length, level)).map(
-          ([x, y, z, rotation, scale], index) => (
-            <group key={`leaf-${index}`} position={[x, y, z]} rotation={[0, rotation, 0]}>
-              <mesh rotation={[-Math.PI / 2, 0, 0]} scale={[scale, scale * 0.58, 1]}>
-                <circleGeometry args={[0.2, 40]} />
-                <meshPhysicalMaterial
-                  color={leafColor}
-                  roughness={0.56}
-                  metalness={0.04}
-                  clearcoat={0.2}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-              <mesh
-                position={[0, 0.004, 0]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                scale={[scale, scale * 0.58, 1]}
-              >
-                <ringGeometry args={[0.18, 0.192, 40]} />
-                <meshBasicMaterial
-                  color={goldColor}
-                  transparent
-                  opacity={0.3}
-                  depthWrite={false}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-            </group>
-          ),
-        )}
+      {leaves
+        .slice(0, visibleLeafCount)
+        .map(([x, y, z, rotation, scale], index) => (
+          <group
+            key={`leaf-${index}`}
+            position={[x, y, z]}
+            rotation={[0, rotation, 0]}
+          >
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              scale={[scale, scale * 0.62, 1]}
+            >
+              <circleGeometry args={[0.24, 48]} />
+              <meshPhysicalMaterial
+                color={leafColor}
+                roughness={0.52}
+                metalness={0.035}
+                clearcoat={0.26}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+            <mesh
+              position={[0, 0.006, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              scale={[scale, scale * 0.62, 1]}
+            >
+              <ringGeometry args={[0.216, 0.231, 48]} />
+              <meshBasicMaterial
+                color={goldColor}
+                transparent
+                opacity={0.34}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+            <Line
+              points={[
+                [0, 0.009, -0.13 * scale],
+                [0, 0.011, 0.12 * scale],
+              ]}
+              color="#b9c58e"
+              lineWidth={0.8}
+              transparent
+              opacity={0.62}
+            />
+          </group>
+        ))}
 
       {level >= 3 &&
         stones.map(([x, y, z, size], index) => (
