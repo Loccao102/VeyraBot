@@ -13,6 +13,7 @@ const REACTION_COPY = {
   water_touch: "The pond remembers your touch.",
   secret_shy: "Sen gets a little shy.",
   secret_petal_dance: "The petals learned your rhythm.",
+  ballet_dance: "Sen spins into a little lotus ballet.",
   secret_pond_chorus: "The pond answers in chorus.",
   secret_night_fireflies: "The night answered Sen’s light.",
   secret_quiet_gaze: "Sen noticed the quiet.",
@@ -249,6 +250,18 @@ export default function useInteractionManager({
     [discover, enabled, markActivity, trigger],
   );
 
+  const dance = useCallback(() => {
+    if (!enabled || state === "sleep") return false;
+    markActivity();
+    return trigger("ballet_dance", {
+      target: "sen",
+      intensity: 1,
+      duration: 2800,
+      cooldown: 500,
+      force: true,
+    });
+  }, [enabled, markActivity, state, trigger]);
+
   const beginCoreHold = useCallback(() => {
     if (!enabled) return false;
     markActivity();
@@ -434,6 +447,7 @@ export default function useInteractionManager({
     setHoveredTarget,
     patHead,
     touchPetal,
+    dance,
     beginCoreHold,
     endCoreHold,
     touchWater,
