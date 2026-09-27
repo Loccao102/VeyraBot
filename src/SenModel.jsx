@@ -2668,17 +2668,8 @@ export default function SenModel({
       gesturePulse *
       (state === "success" ? 0.055 : state === "sleep" ? 0.008 : 0.025);
 
-    const gazeState =
-      state === "sleep" || state === "success"
-        ? 0
-        : state === "thinking"
-          ? 0.72
-          : state === "listening"
-            ? 1.05
-            : 1;
-    const gazeStrength = gazeState * (focusActive ? 0.55 : 1);
-    const gazeX = applyGazeDeadZone(gazePointer.current.x) * gazeStrength;
-    const gazeY = applyGazeDeadZone(gazePointer.current.y) * gazeStrength;
+    // Pointer gaze is handled inside <Eyes /> only.
+    // Do not couple cursor position to the head or torso transform.
     const autonomous = state === "idle" ? motion : 0;
     const idleLook =
       (Math.sin(t * 0.17) * 0.075 +
@@ -2761,8 +2752,7 @@ export default function SenModel({
       Math.sin(t * 0.31 + 1.2) * 0.012 * autonomous * presenceCalm;
     awake.current.rotation.x = damp(
       awake.current.rotation.x,
-      0.075 * folded -
-        gazeY * 0.018 * emergence +
+      0.075 * folded +
         prepPose * 0.028 * balletDance * danceMotion +
         finishPose * 0.055 * balletDance * danceMotion,
       balletActive ? 6 : 2.6,
@@ -2770,11 +2760,7 @@ export default function SenModel({
     );
     awake.current.rotation.y = damp(
       awake.current.rotation.y,
-      (
-        idleLook * 0.18 +
-        gazeX * 0.038 * emergence +
-        ambientHeadYaw * 0.16
-      ) *
+      (idleLook * 0.18 + ambientHeadYaw * 0.16) *
         (1 - headCenterLock),
       headCenterLock > 0.01 ? 9 : 2.4,
       delta,
@@ -2821,10 +2807,6 @@ export default function SenModel({
     head.current.rotation.y = damp(
       head.current.rotation.y,
       (
-        gazeX *
-          (headHover ? 0.21 : 0.17) *
-          emergence *
-          (1 - quietGaze * 0.92) +
         idleLook * 0.45 * (1 - quietGaze) +
         ambientHeadYaw +
         gestureYaw
@@ -2848,8 +2830,7 @@ export default function SenModel({
       head.current.rotation.x,
       headInteractionLock
         ? headPat * 0.09 + shy * 0.055
-        : 0.14 * folded -
-          gazeY * (headHover ? 0.105 : 0.082) * emergence +
+        : 0.14 * folded +
           ambientHeadPitch +
           gestureTilt +
           prepPose * 0.035 * balletDance * danceMotion -
