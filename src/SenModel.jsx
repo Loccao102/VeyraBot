@@ -2532,16 +2532,29 @@ export default function SenModel({
     const turnPose = motionWindow(danceT, 0.27, 0.34, 0.57, 0.64);
     const arabesquePose = motionWindow(danceT, 0.57, 0.66, 0.8, 0.88);
     const finishPose = motionWindow(danceT, 0.84, 0.9, 0.975, 1);
-    const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.29, 0.59);
-    const pirouetteAngle = turnProgress * TAU * danceMotion;
+    // Front -> profile -> back hold -> profile -> front.
+    // The brief back hold makes Sen's orientation legible instead of reading as a symmetric spin.
+    const faceToProfile =
+      THREE.MathUtils.smootherstep(danceT, 0.285, 0.34) * (Math.PI / 2);
+    const profileToBack =
+      THREE.MathUtils.smootherstep(danceT, 0.34, 0.405) * (Math.PI / 2);
+    const backToProfile =
+      THREE.MathUtils.smootherstep(danceT, 0.49, 0.55) * (Math.PI / 2);
+    const profileToFront =
+      THREE.MathUtils.smootherstep(danceT, 0.55, 0.62) * (Math.PI / 2);
+    const pirouetteAngle =
+      (faceToProfile + profileToBack + backToProfile + profileToFront) *
+      danceMotion;
+    const backReveal = motionWindow(danceT, 0.395, 0.43, 0.485, 0.52);
     const danceYawTarget =
       pirouetteAngle +
       arabesquePose * 0.34 * danceMotion -
       finishPose * 0.1 * danceMotion;
     const headSpot =
-      -pirouetteAngle * 0.72 +
-      Math.sin(turnProgress * Math.PI * 4) *
-        0.09 *
+      -pirouetteAngle * 0.68 +
+      backReveal * 0.2 * danceMotion +
+      Math.sin(danceT * Math.PI * 6) *
+        0.06 *
         turnPose *
         danceMotion;
     const danceLift =
@@ -2554,13 +2567,16 @@ export default function SenModel({
       danceMotion;
     const danceTravelX =
       (-openPose * 0.055 +
-        turnPose * 0.06 +
+        turnPose * 0.045 +
+        backReveal * 0.035 +
         arabesquePose * 0.24 -
         finishPose * 0.07) *
       balletDance *
       danceMotion;
     const danceTravelZ =
-      (turnPose * 0.055 + arabesquePose * 0.13) *
+      (turnPose * 0.045 +
+        backReveal * 0.075 +
+        arabesquePose * 0.13) *
       balletDance *
       danceMotion;
     const danceTorsoTilt =
@@ -3175,6 +3191,72 @@ export default function SenModel({
               ornament
             />
           ))}
+        </group>
+
+        {/* Back identity: darker lotus mantle + gold seal make 180° instantly readable. */}
+        <group position={[0, -0.08, -0.38]}>
+          <Petal
+            position={[0, -0.56, -0.01]}
+            rotation={[0.12, Math.PI, 0]}
+            scale={[0.72, 1.02, 0.58]}
+            color={personalPalette.leaf}
+            accent={personalPalette.gold}
+            bend={0.18}
+            leaf
+          />
+          {[-1, 1].map((side) => (
+            <Petal
+              key={`back-mantle-${side}`}
+              position={[side * 0.34, -0.42, 0]}
+              rotation={[0.18, Math.PI + side * 0.18, -side * 0.54]}
+              scale={[0.48, 0.8, 0.48]}
+              color={side < 0 ? personalPalette.leaf : "#7f9b78"}
+              accent={personalPalette.gold}
+              bend={0.14}
+              leaf
+            />
+          ))}
+          <mesh position={[0, -0.02, -0.045]} rotation={[0, Math.PI / 4, 0]}>
+            <octahedronGeometry args={[0.115, 0]} />
+            <meshPhysicalMaterial
+              color={personalPalette.gold}
+              emissive={personalPalette.gold}
+              emissiveIntensity={0.18}
+              metalness={0.28}
+              roughness={0.34}
+              clearcoat={0.8}
+            />
+          </mesh>
+          <Line
+            points={[
+              [-0.22, -0.02, -0.04],
+              [0, 0.12, -0.055],
+              [0.22, -0.02, -0.04],
+              [0, -0.18, -0.055],
+              [-0.22, -0.02, -0.04],
+            ]}
+            color={personalPalette.gold}
+            lineWidth={1.35}
+            transparent
+            opacity={0.78}
+          />
+        </group>
+
+        {/* Front identity: a warm lotus arc frames the existing chest crystal. */}
+        <group position={[0, -0.06, 0.405]}>
+          <Line
+            points={[
+              [-0.2, -0.08, 0],
+              [-0.11, 0.04, 0.004],
+              [0, 0.12, 0.008],
+              [0.11, 0.04, 0.004],
+              [0.2, -0.08, 0],
+            ]}
+            color={personalPalette.gold}
+            lineWidth={1.55}
+            transparent
+            opacity={0.88}
+          />
         </group>
 
         {/* Petal body: no mechanical joints, hands or mouth. */}
