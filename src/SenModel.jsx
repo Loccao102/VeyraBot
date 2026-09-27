@@ -2497,23 +2497,30 @@ export default function SenModel({
 
     // Four readable beats: settle -> open -> one turn -> soft bow.
     const prepPose = motionWindow(danceT, 0.0, 0.06, 0.14, 0.22);
-    const openPose = motionWindow(danceT, 0.14, 0.24, 0.38, 0.48);
-    const turnPose = motionWindow(danceT, 0.34, 0.42, 0.68, 0.76);
-    const finishPose = motionWindow(danceT, 0.72, 0.82, 0.97, 1);
+    const openPose = motionWindow(danceT, 0.14, 0.24, 0.4, 0.52);
+    const turnPose = motionWindow(danceT, 0.32, 0.4, 0.76, 0.86);
+    const finishPose = motionWindow(danceT, 0.8, 0.88, 0.985, 1);
 
-    const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.36, 0.8);
-    // Keep the spin complete and readable. Reduced-motion only affects secondary
-    // sway/flare, not whether Sen actually finishes the authored turn.
-    const pirouetteAngle = turnProgress * TAU * 1.02;
-    const danceYawTarget = pirouetteAngle;
+    const turnProgress = THREE.MathUtils.smootherstep(danceT, 0.34, 0.76);
+    const frontSettle = THREE.MathUtils.smootherstep(danceT, 0.8, 0.965);
 
-    // Head spotting is deliberately subtle; body orientation now carries the turn.
+    // Pass one complete rotation before the ending phrase, then always settle
+    // to exactly TAU (= the original front-facing orientation).
+    const rawTurnAngle = turnProgress * TAU * 1.08;
+    const danceYawTarget = THREE.MathUtils.lerp(
+      rawTurnAngle,
+      TAU,
+      frontSettle,
+    );
+
+    // Spot during the turn, but neutralize the head during the front-facing settle.
     const headSpot =
-      -pirouetteAngle * 0.22 +
-      Math.sin(turnProgress * Math.PI * 2) *
-        0.026 *
-        turnPose *
-        danceMotion;
+      (-rawTurnAngle * 0.2 +
+        Math.sin(turnProgress * Math.PI * 2) *
+          0.022 *
+          turnPose *
+          danceMotion) *
+      (1 - frontSettle);
 
     const danceLift =
       (-prepPose * 0.035 +
@@ -2850,9 +2857,10 @@ export default function SenModel({
       const armGroup = armPetals.current[side];
       if (armGroup) {
         const armOpen =
-          (openPose * 0.62 + turnPose * 0.5 + finishPose * 0.16) *
+          (openPose * 0.62 + turnPose * 0.48 + finishPose * 0.12) *
           balletDance *
-          danceMotion;
+          danceMotion *
+          (1 - frontSettle * 0.58);
         const armHeight =
           (openPose * 0.028 + turnPose * 0.04 - finishPose * 0.012) *
           balletDance *
@@ -2892,10 +2900,16 @@ export default function SenModel({
     });
     if (skirt.current) {
       const flare =
-        (openPose * 0.13 + turnPose * 0.34 + finishPose * 0.055) *
+        (openPose * 0.13 + turnPose * 0.3 + finishPose * 0.04) *
         balletDance *
-        danceMotion;
-      const skirtSweep = turnPose * 0.028 * balletDance * danceMotion;
+        danceMotion *
+        (1 - frontSettle * 0.48);
+      const skirtSweep =
+        turnPose *
+        0.024 *
+        balletDance *
+        danceMotion *
+        (1 - frontSettle);
 
       skirt.current.scale.x = damp(
         skirt.current.scale.x,
@@ -2917,7 +2931,9 @@ export default function SenModel({
       );
 
       if (balletActive) {
-        skirt.current.rotation.y = danceYawTarget - turnPose * 0.08 * danceMotion;
+        skirt.current.rotation.y =
+          danceYawTarget -
+          turnPose * 0.06 * danceMotion * (1 - frontSettle);
       } else {
         skirt.current.rotation.y = Math.atan2(
           Math.sin(skirt.current.rotation.y),
@@ -3193,24 +3209,26 @@ export default function SenModel({
               accent={personalPalette.gold}
               ornament
             />
-            <Petal
-              position={[side * 0.34, -0.7, -0.16]}
-              rotation={[0.13, side * 0.34, -side * 0.96]}
-              scale={[0.44, 0.68, 0.44]}
-              color="#86a669"
-              accent="#c39a58"
-              bend={0.13}
-              leaf
-            />
-            <Petal
-              position={[side * 0.76, -0.5, -0.2]}
-              rotation={[0.11, side * 0.38, -side * 1.78]}
-              scale={[0.39, 0.62, 0.42]}
-              color="#75945d"
-              accent="#c39a58"
-              bend={0.11}
-              leaf
-            />
+            <group position={[0, 0, -0.24]}>
+              <Petal
+                position={[side * 0.3, -0.54, -0.08]}
+                rotation={[0.11, side * 0.3, -side * 1.22]}
+                scale={[0.34, 0.58, 0.36]}
+                color="#86a669"
+                accent="#c39a58"
+                bend={0.1}
+                leaf
+              />
+              <Petal
+                position={[side * 0.58, -0.38, -0.12]}
+                rotation={[0.09, side * 0.34, -side * 1.78]}
+                scale={[0.31, 0.53, 0.34]}
+                color="#75945d"
+                accent="#c39a58"
+                bend={0.08}
+                leaf
+              />
+            </group>
             <group
               ref={(node) => {
                 armPetals.current[side] = node;
@@ -3224,23 +3242,9 @@ export default function SenModel({
                 accent={personalPalette.gold}
                 ornament
               />
-              <Petal
-                position={[side * 0.52, -0.24, -0.16]}
-                rotation={[0.13, side * 0.3, -side * 2.28]}
-                scale={[0.48, 0.74, 0.5]}
-                color={personalPalette.leaf}
-                accent={personalPalette.gold}
-                leaf
-              />
+
             </group>
-            <Petal
-              position={[side * 0.12, -0.02, -0.18]}
-              rotation={[0.2, side * 0.16, -side * 1.08]}
-              scale={[0.3, 0.54, 0.42]}
-              color={personalPalette.leaf}
-              accent={personalPalette.gold}
-              leaf
-            />
+
             {characterInteractionEnabled && (
               <mesh
                 position={[side * 0.45, -0.11, 0.2]}
