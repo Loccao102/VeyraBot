@@ -1189,6 +1189,14 @@ function DesktopApp() {
           </span>
           <button
             type="button"
+            onClick={() => desktopInteraction.dance()}
+            disabled={isRunning || state === "sleep"}
+            title="Sen lotus ballet"
+          >
+            Dance
+          </button>
+          <button
+            type="button"
             onClick={() => setState(state === "sleep" ? "idle" : "sleep")}
             disabled={isRunning}
           >
@@ -1576,6 +1584,19 @@ function App() {
               <i />
             </div>
           </div>
+
+          <button
+            type="button"
+            className="rest-toggle dance-toggle"
+            onClick={() => interaction.dance()}
+            disabled={isRunning || state === "sleep"}
+          >
+            <span>↻</span>
+            <span>
+              <strong>Lotus ballet</strong>
+              <small>Spin, lift and let the petals flare</small>
+            </span>
+          </button>
 
           <button
             type="button"
