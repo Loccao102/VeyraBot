@@ -320,20 +320,100 @@ function PhaseSignature({ phase, weather, reducedMotion }) {
   );
 }
 
-function CloudVeil() {
+function ClearSparkles({ phase, reducedMotion }) {
+  const ref = useRef();
+  const sparkles = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => ({
+        x: -1.85 + ((i * 37) % 100) / 27,
+        y: -0.65 + ((i * 29) % 100) / 55,
+        z: -0.65 - (i % 4) * 0.18,
+        size: 0.012 + (i % 3) * 0.006,
+        phase: i * 0.71,
+      })),
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const motion = reducedMotion ? 0.2 : 1;
+    ref.current?.children.forEach((mesh, i) => {
+      const sparkle = sparkles[i];
+      const lift = (t * 0.055 * motion + sparkle.phase * 0.08) % 0.42;
+      mesh.position.y = sparkle.y + lift;
+      mesh.position.x =
+        sparkle.x + Math.sin(t * 0.22 + sparkle.phase) * 0.035 * motion;
+      mesh.rotation.z = t * 0.18 * motion + sparkle.phase;
+      const twinkle = 0.5 + (Math.sin(t * 1.45 + sparkle.phase) + 1) * 0.25;
+      mesh.material.opacity = twinkle * (phase.key === "night" ? 0.15 : 0.32);
+      mesh.scale.setScalar(0.8 + twinkle * 0.4);
+    });
+  });
+
   return (
-    <group position={[0, 0.55, -1.4]}>
-      {[-1, 0, 1].map((i) => (
+    <group ref={ref}>
+      {sparkles.map((sparkle, i) => (
         <mesh
           key={i}
-          position={[i * 0.82, i % 2 ? 0.15 : -0.04, 0]}
-          scale={[1.0 + (i === 0 ? 0.22 : 0), 0.42, 1]}
+          position={[sparkle.x, sparkle.y, sparkle.z]}
+          rotation={[0, 0, sparkle.phase]}
         >
-          <circleGeometry args={[0.75, 40]} />
+          <octahedronGeometry args={[sparkle.size, 0]} />
           <meshBasicMaterial
-            color="#cfc3c1"
+            color={i % 4 === 0 ? phase.accent : "#f7ead4"}
             transparent
-            opacity={0.055}
+            opacity={0.16}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function CloudVeil({ reducedMotion }) {
+  const ref = useRef();
+  const clouds = useMemo(
+    () =>
+      [
+        [-1.55, 0.92, -1.58, 1.05, 0.42, 0.0],
+        [-0.72, 1.15, -1.64, 1.2, 0.46, 1.2],
+        [0.18, 0.88, -1.56, 1.35, 0.5, 2.1],
+        [1.12, 1.18, -1.67, 1.08, 0.4, 3.0],
+        [1.72, 0.82, -1.6, 0.92, 0.36, 4.1],
+      ],
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const motion = reducedMotion ? 0.12 : 1;
+    ref.current?.children.forEach((mesh, i) => {
+      const cloud = clouds[i];
+      mesh.position.x =
+        cloud[0] + Math.sin(t * (0.065 + i * 0.006) + cloud[5]) * 0.32 * motion;
+      mesh.position.y =
+        cloud[1] + Math.sin(t * 0.05 + cloud[5]) * 0.06 * motion;
+      mesh.material.opacity =
+        0.075 + (Math.sin(t * 0.11 + cloud[5]) + 1) * 0.018;
+    });
+  });
+
+  return (
+    <group ref={ref}>
+      {clouds.map(([x, y, z, sx, sy, phase], i) => (
+        <mesh
+          key={i}
+          position={[x, y, z]}
+          scale={[sx, sy, 1]}
+          rotation={[0, 0, (i - 2) * 0.025]}
+        >
+          <circleGeometry args={[0.75, 48]} />
+          <meshBasicMaterial
+            color={i % 2 === 0 ? "#c9c3bd" : "#ddd7d0"}
+            transparent
+            opacity={0.085}
             depthWrite={false}
           />
         </mesh>
@@ -344,29 +424,39 @@ function CloudVeil() {
 
 function RainRipples({ reducedMotion }) {
   const ref = useRef();
+
   useFrame(({ clock }) => {
     ref.current?.children.forEach((mesh, i) => {
-      const phase = (clock.elapsedTime * (reducedMotion ? 0.08 : 0.55) + i / 8) % 1;
-      mesh.scale.setScalar(0.75 + phase * 3.4);
-      mesh.material.opacity = (1 - phase) * 0.18;
+      const phase =
+        (clock.elapsedTime * (reducedMotion ? 0.1 : 0.62) + i / 12) % 1;
+      mesh.scale.setScalar(0.68 + phase * 3.8);
+      mesh.material.opacity = (1 - phase) * 0.24;
     });
   });
 
   return (
-    <group ref={ref} position={[0, -1.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      {Array.from({ length: 8 }, (_, i) => {
+    <group
+      ref={ref}
+      position={[0, -1.095, 0]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      {Array.from({ length: 12 }, (_, i) => {
         const angle = i * 2.17;
-        const radius = 0.42 + (i % 4) * 0.22;
+        const radius = 0.34 + (i % 5) * 0.23;
         return (
           <mesh
             key={i}
-            position={[Math.sin(angle) * radius, Math.cos(angle) * radius * 0.58, 0]}
+            position={[
+              Math.sin(angle) * radius,
+              Math.cos(angle) * radius * 0.62,
+              0,
+            ]}
           >
-            <ringGeometry args={[0.035, 0.045, 32]} />
+            <ringGeometry args={[0.03, 0.043, 36]} />
             <meshBasicMaterial
-              color="#9c9298"
+              color={i % 3 === 0 ? "#b7ced8" : "#98aeb8"}
               transparent
-              opacity={0.18}
+              opacity={0.2}
               depthWrite={false}
               side={THREE.DoubleSide}
             />
@@ -415,12 +505,12 @@ function RainField({ reducedMotion }) {
   const geometryRef = useRef();
   const drops = useMemo(
     () =>
-      Array.from({ length: 132 }, (_, i) => ({
-        x: -2.4 + ((i * 37) % 100) / 20,
-        z: -1.15 + ((i * 53) % 100) / 48,
+      Array.from({ length: 168 }, (_, i) => ({
+        x: -2.6 + ((i * 37) % 100) / 19,
+        z: -1.25 + ((i * 53) % 100) / 45,
         seed: ((i * 29) % 100) / 100,
-        speed: 0.78 + (i % 7) * 0.07,
-        length: 0.11 + (i % 4) * 0.035,
+        speed: 0.84 + (i % 7) * 0.08,
+        length: 0.12 + (i % 5) * 0.038,
       })),
     [],
   );
@@ -428,15 +518,15 @@ function RainField({ reducedMotion }) {
 
   useFrame(({ clock }) => {
     if (!geometryRef.current) return;
-    const t = clock.elapsedTime * (reducedMotion ? 0.18 : 1);
+    const t = clock.elapsedTime * (reducedMotion ? 0.2 : 1);
     drops.forEach((drop, i) => {
-      const travel = (t * drop.speed + drop.seed * 3.4) % 3.4;
-      const y = 2.05 - travel;
+      const travel = (t * drop.speed + drop.seed * 3.6) % 3.6;
+      const y = 2.2 - travel;
       const base = i * 6;
       positions[base] = drop.x;
       positions[base + 1] = y;
       positions[base + 2] = drop.z;
-      positions[base + 3] = drop.x - 0.025;
+      positions[base + 3] = drop.x - 0.035;
       positions[base + 4] = y - drop.length;
       positions[base + 5] = drop.z;
     });
@@ -449,9 +539,9 @@ function RainField({ reducedMotion }) {
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <lineBasicMaterial
-        color="#bcaeb3"
+        color="#a8bdc8"
         transparent
-        opacity={0.36}
+        opacity={0.44}
         depthWrite={false}
       />
     </lineSegments>
@@ -460,29 +550,36 @@ function RainField({ reducedMotion }) {
 
 function MistField({ reducedMotion }) {
   const ref = useRef();
+
   useFrame(({ clock }) => {
     ref.current?.children.forEach((mesh, i) => {
-      const drift = reducedMotion ? 0.04 : 1;
+      const motion = reducedMotion ? 0.06 : 1;
       mesh.position.x =
-        Math.sin(clock.elapsedTime * (0.07 + i * 0.012) + i) * 0.34 * drift;
+        Math.sin(clock.elapsedTime * (0.055 + i * 0.009) + i * 1.2) *
+        (0.28 + i * 0.055) *
+        motion;
+      mesh.position.y =
+        -0.74 +
+        i * 0.22 +
+        Math.sin(clock.elapsedTime * 0.075 + i) * 0.035 * motion;
       mesh.material.opacity =
-        0.065 + (Math.sin(clock.elapsedTime * 0.19 + i * 1.7) + 1) * 0.018;
+        0.085 + (Math.sin(clock.elapsedTime * 0.15 + i * 1.7) + 1) * 0.02;
     });
   });
 
   return (
     <group ref={ref}>
-      {[0, 1, 2].map((i) => (
+      {[0, 1, 2, 3].map((i) => (
         <mesh
           key={i}
-          position={[0, -0.08 + i * 0.5, -0.65 - i * 0.22]}
-          scale={[2.8 - i * 0.25, 0.72 + i * 0.12, 1]}
+          position={[0, -0.74 + i * 0.22, -0.46 - i * 0.16]}
+          scale={[3.15 - i * 0.2, 0.56 + i * 0.1, 1]}
         >
-          <circleGeometry args={[1, 48]} />
+          <circleGeometry args={[1, 56]} />
           <meshBasicMaterial
-            color={i === 0 ? "#eadfdd" : "#efe6e2"}
+            color={i % 2 === 0 ? "#e8e0dc" : "#f1eae4"}
             transparent
-            opacity={0.075}
+            opacity={0.095}
             depthWrite={false}
             side={THREE.DoubleSide}
           />
@@ -494,46 +591,92 @@ function MistField({ reducedMotion }) {
 
 function WindField({ reducedMotion }) {
   const geometryRef = useRef();
+  const petalsRef = useRef();
   const streaks = useMemo(
     () =>
-      Array.from({ length: 20 }, (_, i) => ({
-        y: -0.65 + (i % 6) * 0.42,
-        z: -0.9 + (i % 4) * 0.3,
+      Array.from({ length: 24 }, (_, i) => ({
+        y: -0.72 + (i % 7) * 0.39,
+        z: -0.95 + (i % 5) * 0.27,
         seed: ((i * 31) % 100) / 100,
-        length: 0.12 + (i % 4) * 0.04,
+        length: 0.12 + (i % 4) * 0.05,
+      })),
+    [],
+  );
+  const petals = useMemo(
+    () =>
+      Array.from({ length: 11 }, (_, i) => ({
+        seed: ((i * 43 + 17) % 100) / 100,
+        y: -0.45 + (i % 5) * 0.42,
+        z: -0.52 + (i % 4) * 0.28,
+        size: 0.055 + (i % 3) * 0.012,
       })),
     [],
   );
   const positions = useMemo(() => new Float32Array(streaks.length * 6), [streaks]);
 
   useFrame(({ clock }) => {
-    if (!geometryRef.current) return;
-    const t = clock.elapsedTime * (reducedMotion ? 0.12 : 0.75);
-    streaks.forEach((streak, i) => {
-      const x = -2.2 + ((t + streak.seed * 4.4) % 4.4);
-      const base = i * 6;
-      positions[base] = x;
-      positions[base + 1] = streak.y;
-      positions[base + 2] = streak.z;
-      positions[base + 3] = x + streak.length;
-      positions[base + 4] = streak.y + 0.012;
-      positions[base + 5] = streak.z;
+    const motion = reducedMotion ? 0.16 : 1;
+    const t = clock.elapsedTime * (reducedMotion ? 0.16 : 0.82);
+
+    if (geometryRef.current) {
+      streaks.forEach((streak, i) => {
+        const x = -2.35 + ((t + streak.seed * 4.7) % 4.7);
+        const base = i * 6;
+        positions[base] = x;
+        positions[base + 1] = streak.y;
+        positions[base + 2] = streak.z;
+        positions[base + 3] = x + streak.length;
+        positions[base + 4] = streak.y + 0.018;
+        positions[base + 5] = streak.z;
+      });
+      geometryRef.current.attributes.position.needsUpdate = true;
+    }
+
+    petalsRef.current?.children.forEach((mesh, i) => {
+      const petal = petals[i];
+      const phase = (clock.elapsedTime * 0.13 * motion + petal.seed) % 1;
+      mesh.position.x = 2.25 - phase * 4.55;
+      mesh.position.y =
+        petal.y + Math.sin(phase * TAU * 1.4 + i) * 0.24 * motion;
+      mesh.position.z =
+        petal.z + Math.cos(phase * TAU + i * 0.8) * 0.1 * motion;
+      mesh.rotation.z =
+        phase * TAU * 1.8 + i * 0.7;
+      mesh.rotation.x =
+        0.35 + Math.sin(phase * TAU + i) * 0.45 * motion;
+      mesh.material.opacity = 0.08 + Math.sin(Math.PI * phase) * 0.26;
     });
-    geometryRef.current.attributes.position.needsUpdate = true;
   });
 
   return (
-    <lineSegments>
-      <bufferGeometry ref={geometryRef}>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <lineBasicMaterial
-        color="#b9aa9f"
-        transparent
-        opacity={0.12}
-        depthWrite={false}
-      />
-    </lineSegments>
+    <group>
+      <lineSegments>
+        <bufferGeometry ref={geometryRef}>
+          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial
+          color="#9cae99"
+          transparent
+          opacity={0.16}
+          depthWrite={false}
+        />
+      </lineSegments>
+
+      <group ref={petalsRef}>
+        {petals.map((petal, i) => (
+          <mesh key={i} scale={[0.72, 1.25, 1]}>
+            <circleGeometry args={[petal.size, 24]} />
+            <meshBasicMaterial
+              color={i % 3 === 0 ? "#c99b63" : i % 2 ? "#df8da5" : "#efb7c6"}
+              transparent
+              opacity={0.16}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
+      </group>
+    </group>
   );
 }
 
@@ -657,12 +800,63 @@ export default function EnvironmentEffects({
         </>
       )}
 
+      {weatherKey === "clear" && (
+        <pointLight
+          position={[1.9, 1.8, 2.4]}
+          intensity={0.32 * lightMultiplier}
+          distance={6}
+          decay={2}
+          color="#ffe7b3"
+        />
+      )}
+      {weatherKey === "rain" && (
+        <pointLight
+          position={[-1.8, 1.4, 2]}
+          intensity={0.34 * lightMultiplier}
+          distance={6}
+          decay={2}
+          color="#a9c9da"
+        />
+      )}
+      {weatherKey === "cloudy" && (
+        <pointLight
+          position={[0, 2.3, 1.8]}
+          intensity={0.28 * lightMultiplier}
+          distance={7}
+          decay={2}
+          color="#d8d4cd"
+        />
+      )}
+      {weatherKey === "mist" && (
+        <pointLight
+          position={[0, 0.35, 2.1]}
+          intensity={0.38 * lightMultiplier}
+          distance={5.5}
+          decay={2}
+          color="#eee5df"
+        />
+      )}
+      {weatherKey === "wind" && (
+        <pointLight
+          position={[2.2, 1.1, 1.5]}
+          intensity={0.24 * lightMultiplier}
+          distance={6}
+          decay={2}
+          color="#c6d5b8"
+        />
+      )}
+
       <PhaseSignature
         phase={phase}
         weather={weather}
         reducedMotion={reducedMotion}
       />
-      {weatherKey === "cloudy" && <CloudVeil />}
+      {weatherKey === "clear" && (
+        <ClearSparkles phase={phase} reducedMotion={reducedMotion} />
+      )}
+      {weatherKey === "cloudy" && (
+        <CloudVeil reducedMotion={reducedMotion} />
+      )}
       <AmbientMotes
         phase={phase}
         weather={weather}
