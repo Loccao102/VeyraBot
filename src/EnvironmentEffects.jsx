@@ -9,47 +9,47 @@ export const PRESENCE_PHASES = {
   dawn: {
     key: "dawn",
     label: "EARLY LIGHT",
-    ambient: "#f6d8ca",
-    keyLight: "#ffd0bd",
-    rimLight: "#e9a9b9",
-    backLight: "#ffe8cf",
-    ambientIntensity: 0.66,
-    keyIntensity: 1.7,
-    rimIntensity: 1.2,
-    backIntensity: 1.45,
-    particle: "#e9a8b8",
-    accent: "#d5a064",
-    moteCount: 20,
+    ambient: "#f2c8b8",
+    keyLight: "#ffb992",
+    rimLight: "#e994ac",
+    backLight: "#ffe2bd",
+    ambientIntensity: 0.58,
+    keyIntensity: 1.9,
+    rimIntensity: 1.35,
+    backIntensity: 1.2,
+    particle: "#e88fa8",
+    accent: "#d29a57",
+    moteCount: 24,
   },
   day: {
     key: "day",
     label: "DAYLIGHT",
-    ambient: "#f8f1df",
-    keyLight: "#fff0c9",
-    rimLight: "#c7d8bc",
-    backLight: "#fff9e8",
-    ambientIntensity: 0.86,
-    keyIntensity: 2.05,
-    rimIntensity: 1.35,
-    backIntensity: 2.05,
-    particle: "#eab5c1",
-    accent: "#c5a15f",
-    moteCount: 14,
+    ambient: "#f4f0dc",
+    keyLight: "#fff4c7",
+    rimLight: "#a8c99a",
+    backLight: "#f9f5df",
+    ambientIntensity: 0.98,
+    keyIntensity: 2.45,
+    rimIntensity: 1.55,
+    backIntensity: 1.75,
+    particle: "#c9d8b9",
+    accent: "#c7a45e",
+    moteCount: 10,
   },
   dusk: {
     key: "dusk",
     label: "GOLDEN HOUR",
-    ambient: "#dca998",
-    keyLight: "#ee9c7e",
-    rimLight: "#c77994",
-    backLight: "#e9b578",
-    ambientIntensity: 0.56,
-    keyIntensity: 1.8,
-    rimIntensity: 1.6,
-    backIntensity: 1.35,
-    particle: "#efa0b5",
-    accent: "#d08f45",
-    moteCount: 24,
+    ambient: "#bc8178",
+    keyLight: "#e86f52",
+    rimLight: "#a15d8f",
+    backLight: "#e5a45b",
+    ambientIntensity: 0.42,
+    keyIntensity: 2.05,
+    rimIntensity: 1.95,
+    backIntensity: 1.5,
+    particle: "#e9859f",
+    accent: "#d08b3f",
+    moteCount: 28,
   },
   night: {
     key: "night",
@@ -577,6 +577,60 @@ export default function EnvironmentEffects({
         intensity={phase.backIntensity * lightMultiplier}
         color={phase.backLight}
       />
+      {phase.key === "dawn" && (
+        <>
+          <pointLight
+            position={[-2.7, 0.8, 2.5]}
+            intensity={1.25 * lightMultiplier}
+            distance={7}
+            decay={2}
+            color="#ff9f7d"
+          />
+          <pointLight
+            position={[1.7, 1.55, -1.4]}
+            intensity={0.6 * lightMultiplier}
+            distance={6}
+            decay={2}
+            color="#efabc0"
+          />
+        </>
+      )}
+      {phase.key === "day" && (
+        <>
+          <pointLight
+            position={[0.4, 2.8, 2.2]}
+            intensity={1.15 * lightMultiplier}
+            distance={8}
+            decay={2}
+            color="#fff2b8"
+          />
+          <pointLight
+            position={[-2.1, 0.2, -0.4]}
+            intensity={0.55 * lightMultiplier}
+            distance={6}
+            decay={2}
+            color="#a9c99b"
+          />
+        </>
+      )}
+      {phase.key === "dusk" && (
+        <>
+          <pointLight
+            position={[-2.5, 0.45, 2.1]}
+            intensity={1.5 * lightMultiplier}
+            distance={7.5}
+            decay={2}
+            color="#e5684f"
+          />
+          <pointLight
+            position={[2.2, 1.5, -1.2]}
+            intensity={0.9 * lightMultiplier}
+            distance={6.5}
+            decay={2}
+            color="#a9639b"
+          />
+        </>
+      )}
       {phase.key === "night" && (
         <>
           <pointLight
